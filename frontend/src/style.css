@@ -1,0 +1,102 @@
+:root {
+  --bg: hsl(200, 18%, 97%);
+  --yellow: hsl(50, 91%, 52%);
+  --green: hsl(160, 13%, 33%);
+  --ink: hsl(220, 4%, 28%);
+  --mid: rgba(69, 71, 75, .7);
+  --line: rgba(69, 71, 75, .2);
+  --tint: hsl(50, 91%, 52%);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); }
+main { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 3rem; }
+header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.5rem; }
+h1 { margin: 0; font-size: 1.4rem; font-weight: 600; background-color: var(--yellow); padding: 10px; }
+.header-actions { display: flex; gap: .75rem; align-items: center; }
+
+button { font: inherit; font-size: .9rem; padding: .35rem .75rem; border: 1px solid var(--green); background: var(--bg); color: var(--green); cursor: pointer; }
+button:hover { background: var(--tint); }
+button.primary, .filters button.active { background: var(--green); color: var(--bg); }
+button.primary:hover, .filters button.active:hover { background: var(--ink); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+
+.lang { display: flex; }
+.lang button { padding: .2rem .5rem; font-size: .8rem; border-color: var(--line); color: var(--ink); }
+.lang button + button { border-left: none; }
+.lang button.active { background: var(--green); border-color: var(--green); color: var(--bg); }
+
+.filters { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.25rem; align-items: center; }
+.filters button { border-color: var(--line); color: var(--ink); }
+.filters button.active { border-color: var(--green); color: var(--bg); }
+.filters input { margin-left: auto; width: 220px; }
+
+input, select, textarea { font: inherit; font-size: .9rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 0; background: var(--bg); color: var(--ink); width: 100%; }
+input:focus, select:focus, textarea:focus { border-color: var(--green); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .65rem .6rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+th { font-size: .8rem; font-weight: 600; color: var(--green); border-bottom: 2px solid var(--green); }
+td select { width: auto; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: var(--tint); }
+.name { font-weight: 600; }
+a { color: var(--green); font-weight: 600; text-underline-offset: 2px; }
+.sub { color: var(--mid); font-size: .85rem; }
+.actions { white-space: nowrap; }
+.actions button { border-color: var(--line); color: var(--ink); font-size: .8rem; padding: .2rem .5rem; }
+.clip { max-width: 16rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+td.fav { width: 2rem; padding-right: 0; }
+.star { border: none; background: none; padding: 0 .25rem; font-size: 1.2rem; line-height: 1; color: var(--green); }
+.star:hover { background: none; }
+.star.on { color: var(--yellow); -webkit-text-stroke: 1px var(--green); }
+
+tr.rejected td { color: var(--mid); background: var(--tint); }
+tr.rejected a, tr.rejected .name { color: var(--mid); }
+tr.unsure td { font-style: italic; }
+tr.interview td:first-child { box-shadow: inset 4px 0 0 var(--yellow); }
+tr.offer td { font-weight: 700; }
+tr.offer td:first-child { box-shadow: inset 4px 0 0 var(--green); }
+.overdue { font-weight: 700; background: var(--yellow); color: var(--ink); }
+tbody tr:hover td.overdue { background: var(--yellow); }
+
+.empty, .error { padding: 1.5rem 0; margin: 0; color: var(--mid); }
+.error { color: var(--ink); font-weight: 600; box-shadow: inset 4px 0 0 var(--yellow); padding-left: 1rem; }
+
+.overlay { position: fixed; inset: 0; background: rgba(245, 247, 248, .9); display: grid; place-items: center; padding: 1rem; overflow-y: auto; }
+.dialog { background: var(--bg); border: 1px solid var(--green); border-top: 4px solid var(--yellow); padding: 1.5rem; width: min(640px, 100%); display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: dense; gap: .8rem; }
+.dialog h2 { grid-column: 1 / -1; margin: 0; font-size: 1.1rem; font-weight: 600; }
+.dialog label { display: grid; gap: .25rem; font-size: .85rem; color: var(--mid); }
+.dialog .wide, .dialog .buttons { grid-column: 1 / -1; }
+.buttons { display: flex; justify-content: flex-end; gap: .5rem; }
+
+.check { display: flex !important; align-items: center; gap: .5rem; }
+.check input { width: auto; }
+
+.detail { grid-template-columns: 1fr; }
+.detail p { margin: 0; }
+.detail dl { display: grid; grid-template-columns: 9rem 1fr; gap: .6rem 1rem; margin: .5rem 0 0; }
+.detail dt { color: var(--mid); font-size: .85rem; }
+.detail dd { margin: 0; word-break: break-word; }
+.pre { white-space: pre-line; }
+
+.settings { width: min(560px, 100%); }
+.settings fieldset { border: 1px solid var(--line); margin: 0; padding: .75rem; display: grid; gap: .4rem; align-content: start; }
+.settings legend { padding: 0 .4rem; font-size: .85rem; font-weight: 600; color: var(--green); }
+.settings .check { color: var(--ink); font-size: .9rem; }
+
+.detail h3 { margin: .75rem 0 0; font-size: .95rem; font-weight: 600; color: var(--green); }
+.files { list-style: none; margin: 0; padding: 0; display: grid; gap: .4rem; }
+.files li { display: flex; gap: .6rem; align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: .4rem; }
+.files li .sub { margin-left: auto; }
+.files button { border: none; background: none; padding: 0 .3rem; font-size: 1.1rem; line-height: 1; color: var(--ink); }
+
+.upload { display: flex; gap: .5rem; align-items: center; }
+.upload select { width: auto; }
+.upload .file-btn { position: relative; display: inline-block; border: 1px solid var(--green); color: var(--green); padding: .35rem .75rem; font-size: .9rem; cursor: pointer; }
+.upload .file-btn:hover { background: var(--tint); }
+.upload .file-btn:focus-within { outline: 2px solid var(--green); outline-offset: 2px; }
+.upload .file-btn input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+
+@media (max-width: 560px) { .dialog { grid-template-columns: 1fr; } }

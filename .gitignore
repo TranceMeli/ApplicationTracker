@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Django runtime data
+backend/db.sqlite3
+backend/media/
+
+# Node
+node_modules/
+dist/
+
+# Environment and logs
+.env
+*.log
+
+# Editor and OS
+.vscode/
+.DS_Store
+Thumbs.db
