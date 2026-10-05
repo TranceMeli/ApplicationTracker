@@ -1,12 +1,16 @@
 # Application Tracker
 
-
 ![Status](https://img.shields.io/badge/WORK%20IN%20PROGRESS-F4CE14?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
 ![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
+
+## Preview
+
+<img width="auto" height="800" alt="Minimalistisches Bewerbungsdashboard mit Filtertabelle" src="https://github.com/user-attachments/assets/6098ac2c-ef52-42c6-9d00-a36b379ea283" />
+
 
 A web app to keep track of job applications, from the first contact to the final answer. The backend is a Django REST API with a SQLite database, the frontend is a Vue 3 single-page app built with Vite.
 
