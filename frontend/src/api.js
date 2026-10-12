@@ -31,4 +31,18 @@ export const api = {
     return res.json()
   },
   removeAttachment: (id) => request(`${FILES}${id}/`, { method: 'DELETE' }),
+
+
+    async importList(file, dryRun, defaultStatus) {
+    const body = new FormData()
+    body.append('file', file)
+    body.append('dry_run', dryRun ? '1' : '0')
+    body.append('default_status', defaultStatus)
+    const res = await fetch(`${BASE}import/`, { method: 'POST', body })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.code ?? `HTTP ${res.status}`)
+    }
+    return res.json()
+  },
 }

@@ -9,14 +9,11 @@
 
 ## Preview
 
-<img width="auto" height="800" alt="Minimalistisches Bewerbungsdashboard mit Filtertabelle" src="https://github.com/user-attachments/assets/6098ac2c-ef52-42c6-9d00-a36b379ea283" />
-
+![alt text](frontend/src/assets/screenshot/screenshot-application-tracker.png)
 
 A web app to keep track of job applications, from the first contact to the final answer. The backend is a Django REST API with a SQLite database, the frontend is a Vue 3 single-page app built with Vite.
 
 This project is under active development. Features and the data model may still change.
-
-A web app to keep track of job applications, from the first contact to the final answer. The backend is a Django REST API with a SQLite database, the frontend is a Vue 3 single-page app built with Vite.
 
 ## Features
 
@@ -24,11 +21,15 @@ A web app to keep track of job applications, from the first contact to the final
 - Status workflow: planned, unsure, applied, interview, rejected, offer
 - Favorites with a star marker and a favorites filter
 - Live search and status filter with counters
+- Consecutive numbering of the applications in the table and detail view
 - Detail view in a modal dialog
 - Highlighting of overdue follow-ups
 - Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view. Hidden fields are not deleted, their data stays stored and can be shown again at any time
 - Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
 - Document attachments per application (cover letter, CV, certificate, other)
+- Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview. Companies that already exist are skipped
+- CSV export of all applications, in the same format as the import template, so an export can be imported again
+- Header with navigation and a footer in the project color palette
 - German and English interface with a language switch, the choice is remembered in the browser
 
 ## Tech Stack
@@ -39,6 +40,7 @@ A web app to keep track of job applications, from the first contact to the final
 | Backend | Django, Django REST Framework, django-cors-headers |
 | Database | SQLite |
 | File storage | Local filesystem (`backend/media/`) |
+| Import | openpyxl for Excel files, standard library for CSV, ODS and JSON |
 
 ## Dependencies
 
@@ -51,15 +53,14 @@ Listed in `backend/requirements.txt`:
 | Django | >= 5.0 | Web framework, ORM, migrations, admin |
 | djangorestframework | >= 3.15 | REST API (serializers, viewsets, routers) |
 | django-cors-headers | >= 4.4 | Allows the Vite dev server to call the API |
+| openpyxl | >= 3.1 | Reads Excel files (.xlsx, .xlsm) during import |
 
-Django pulls in `asgiref`, `sqlparse` and (on Windows) `tzdata` automatically. SQLite needs no separate installation, it ships with Python.
-
-Install everything at once from the requirements file, or package by package when setting the project up from scratch:
+Django pulls in `asgiref`, `sqlparse` and (on Windows) `tzdata` automatically. SQLite needs no separate installation, it ships with Python. ODS files are read with the standard library, no extra package is needed.
 
 ```bash
 pip install -r requirements.txt
 # or
-pip install django djangorestframework django-cors-headers
+pip install django djangorestframework django-cors-headers openpyxl
 ```
 
 ### Frontend (Node.js)
@@ -92,7 +93,8 @@ application-tracker/
 │   └── application/
 │       ├── models.py           Application and Attachment models
 │       ├── serializers.py      API serializers and upload validation
-│       ├── views.py            ViewSets, filtering, statistics
+│       ├── views.py            ViewSets, filtering, statistics, import endpoint
+│       ├── importer.py         File readers and company list import
 │       ├── urls.py             API routes
 │       └── admin.py
 └── frontend/
@@ -100,10 +102,11 @@ application-tracker/
     ├── vite.config.js          Dev server with proxy to the backend
     └── src/
         ├── main.js
-        ├── App.vue             State and data loading
+        ├── App.vue             Layout (header, footer), state and data loading
         ├── api.js              API client
         ├── constants.js        Status keys and date helpers
         ├── fields.js           Field catalog and visibility settings
+        ├── exporter.js         CSV export and import template download
         ├── i18n.js             German and English texts
         ├── style.css
         └── components/
@@ -112,6 +115,7 @@ application-tracker/
             ├── ApplicationForm.vue
             ├── DetailModal.vue
             ├── FieldSettings.vue
+            ├── ImportDialog.vue
             └── LanguageSwitch.vue
 ```
 
@@ -151,16 +155,19 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django on port 8000, so both servers must be running.
+Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django on port 8000, so both servers must be running. Restart the dev server after changes to `vite.config.js`.
 
 ## Usage
 
+- **Navigation:** the header gives access to the list, the import, the export and the field settings. The application name and the Applications entry reset search and filters.
 - **New application:** use the button in the header. Only the company is required.
 - **Status:** change it directly in the table, or filter by it with the buttons above the table.
 - **Favorites:** click the star in the table. The favorites button filters the list.
 - **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
-- **Fields:** the Fields button lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
+- **Fields:** the Fields entry lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
 - **Documents:** open an application, pick a type and attach files. Allowed types are PDF, Word, ODT, TXT, PNG and JPG, up to 10 MB per file.
+- **Import:** open Import, download the template if needed, choose a file and review the preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized. Companies that already exist are skipped.
+- **Export:** the Export entry downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
 - **Language:** switch between DE and EN in the header.
 
 ## API
@@ -170,6 +177,7 @@ Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django
 | GET, POST | `/api/applications/` | List (`?search=`, `?status=`, `?favorite=1`) and create |
 | GET, PATCH, DELETE | `/api/applications/<id>/` | Read, update and delete one application |
 | GET | `/api/applications/stats/` | Number of applications per status |
+| POST | `/api/applications/import/` | Import a company list (multipart: `file`, optional `dry_run`, `default_status`) |
 | POST | `/api/attachments/` | Upload a file (multipart: `application`, `file`, `kind`) |
 | DELETE | `/api/attachments/<id>/` | Remove an attachment and its file |
 
@@ -182,8 +190,9 @@ To add a new field:
 1. Add it to the `Application` model in `backend/application/models.py` and run `python manage.py makemigrations application` followed by `python manage.py migrate`.
 2. Add an entry to the `FIELDS` list in `frontend/src/fields.js`.
 3. Add its label to both languages in `frontend/src/i18n.js`.
+4. Optionally add column aliases to `FIELD_ALIASES` in `backend/application/importer.py` so the field is recognized during import.
 
-The table, form, detail view and the field settings dialog pick it up automatically. A new language is added as another block in `i18n.js`.
+The table, form, detail view, field settings dialog and the CSV export pick it up automatically. A new language is added as another block in `i18n.js`.
 
 ## Notes
 
