@@ -2,9 +2,12 @@ import csv
 import io
 import json
 import re
+import traceback
 import zipfile
 from datetime import date, datetime
 from xml.etree import ElementTree as ET
+
+from django.db import transaction
 
 from .models import Application
 
@@ -38,8 +41,10 @@ FIELD_ALIASES = {
     "link": ["job posting link", "link", "url", "website", "webseite", "link zur stelle", "stellenanzeige"],
     "rejection_reason": ["rejection reason", "absagegrund", "grund der absage"],
     "notes": ["notes", "notizen", "bemerkung", "bemerkungen", "kommentar", "kommentare"],
+    "favorite": ["favorite", "favorit", "favoriten", "stern"],
 }
 ALIAS_LOOKUP = {alias: key for key, aliases in FIELD_ALIASES.items() for alias in aliases}
+COMPANY_ALIASES = set(FIELD_ALIASES["company"])
 
 DATE_FIELDS = ("date", "follow_up", "interview_date", "response_date")
 TEXT_FIELDS = ("company", "position", "contact_person", "email", "phone", "link", "street",
@@ -56,7 +61,7 @@ STATUS_LABELS = {
 CHANNEL_LABELS = {
     "email": "email", "e-mail": "email",
     "portal": "portal",
-    "post": "post", "brief": "post",
+    "post": "post", "mail": "post", "brief": "post",
     "phone": "phone", "telefon": "phone",
     "personal": "personal", "persönlich": "personal", "persoenlich": "personal", "in person": "personal",
 }
@@ -65,6 +70,8 @@ WORK_MODE_LABELS = {
     "hybrid": "hybrid",
     "remote": "remote",
 }
+
+FAVORITE_VALUES = {"ja", "yes", "true", "wahr", "1", "x", "y", "j", "★"}
 
 DATE_FORMATS = ("%d.%m.%Y", "%d.%m.%y", "%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y")
 POSTAL_RE = re.compile(r"^(\d{4,5})\s+(.+)$")
@@ -256,6 +263,7 @@ def read_rows(upload):
     try:
         return READERS[extension](upload)
     except Exception as exc:
+        traceback.print_exc()  # the real reason shows up in the Django terminal
         raise ImportFileError("unreadable") from exc
 
 
@@ -291,9 +299,16 @@ def get(row, columns, key):
     return row[idx] if idx is not None and idx < len(row) else None
 
 
-def run_import(upload, dry_run=False, default_status="planned"):
+def run_import(upload, dry_run=False, default_status="planned", update_existing=True):
     rows, targets = read_rows(upload)
-    header_row = next((i for i, r in enumerate(rows) if any(as_text(v) for v in r)), None)
+    # The header is the first row that names a company column. Rows above it (a title,
+    # blank lines) are ignored. Without such a row, the first non-empty row is used.
+    header_row = next(
+        (i for i, r in enumerate(rows[:20]) if any(normalize(v) in COMPANY_ALIASES for v in r)),
+        None,
+    )
+    if header_row is None:
+        header_row = next((i for i, r in enumerate(rows) if any(as_text(v) for v in r)), None)
     if header_row is None:
         raise ImportFileError("empty")
 
@@ -307,9 +322,14 @@ def run_import(upload, dry_run=False, default_status="planned"):
     if "company" not in columns:
         raise ImportFileError("no_company_column")
 
-    existing = {company_key(c) for c in Application.objects.values_list("company", flat=True)}
-    to_create, errors, warnings, preview = [], [], [], []
-    duplicates = 0
+    # Existing applications by company. If a company appears more than once, the oldest entry is updated.
+    by_company = {}
+    for application in Application.objects.order_by("id"):
+        by_company.setdefault(company_key(application.company), application)
+
+    seen = set()  # companies already handled in this file
+    to_create, to_update, errors, warnings, preview, update_preview = [], [], [], [], [], []
+    duplicates = unchanged = skipped = 0
 
     for number, row in enumerate(rows[header_row + 1:], start=header_row + 2):
         if not any(as_text(v) for v in row):
@@ -359,10 +379,37 @@ def run_import(upload, dry_run=False, default_status="planned"):
                 warnings.append({"row": number, "code": "invalid_date", "value": as_text(value)})
 
         identity = company_key(data["company"])
-        if identity in existing:
-            duplicates += 1
+        if identity in seen:
+            duplicates += 1  # the same company twice in one file, only the first row counts
             continue
-        existing.add(identity)
+        seen.add(identity)
+
+        match = by_company.get(identity)
+        if match:
+            if not update_existing:
+                skipped += 1  # mode "new only": existing companies are left alone
+                continue
+            # Update: every filled cell of the file replaces the stored value. Empty cells and
+            # columns that are not in the file never delete anything. Attachments stay as they are.
+            values = {key: value for key, value in data.items() if value}
+            values.pop("company")  # same company by definition, keep the spelling that is stored
+            values.update({key: value for key, value in dates.items() if value is not None})
+            for key, labels in (("status", STATUS_LABELS), ("channel", CHANNEL_LABELS), ("work_mode", WORK_MODE_LABELS)):
+                label = labels.get(as_text(get(row, columns, key)).lower())
+                if label:
+                    values[key] = label
+            favorite = as_text(get(row, columns, "favorite")).lower()
+            if favorite:
+                values["is_favorite"] = favorite in FAVORITE_VALUES
+
+            changed = [key for key, value in values.items() if getattr(match, key) != value]
+            if changed:
+                to_update.append((match, {key: values[key] for key in changed}))
+                if len(update_preview) < PREVIEW_ROWS:
+                    update_preview.append({"company": match.company, "fields": changed})
+            else:
+                unchanged += 1
+            continue
 
         to_create.append(Application(
             **data,
@@ -370,20 +417,31 @@ def run_import(upload, dry_run=False, default_status="planned"):
             status=STATUS_LABELS.get(as_text(get(row, columns, "status")).lower(), default_status),
             channel=CHANNEL_LABELS.get(as_text(get(row, columns, "channel")).lower(), ""),
             work_mode=WORK_MODE_LABELS.get(as_text(get(row, columns, "work_mode")).lower(), ""),
+            is_favorite=as_text(get(row, columns, "favorite")).lower() in FAVORITE_VALUES,
         ))
         if len(preview) < PREVIEW_ROWS:
             preview.append({"company": data["company"], "position": data["position"], "city": data["city"]})
 
-    if not dry_run and to_create:
-        Application.objects.bulk_create(to_create)
+    if not dry_run:
+        with transaction.atomic():
+            if to_create:
+                Application.objects.bulk_create(to_create)
+            for application, changes in to_update:
+                for key, value in changes.items():
+                    setattr(application, key, value)
+                application.save()  # a changed address also resets the stored map coordinates
 
     return {
         "dry_run": dry_run,
         "created": len(to_create),
+        "updated": len(to_update),
+        "unchanged": unchanged,
+        "skipped": skipped,
         "duplicates": duplicates,
         "errors": errors,
         "warnings": warnings,
         "columns": list(columns),
         "ignored_columns": ignored,
         "preview": preview,
+        "update_preview": update_preview,
     }

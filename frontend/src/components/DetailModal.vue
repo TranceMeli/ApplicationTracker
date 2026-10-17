@@ -74,8 +74,13 @@ async function upload(e) {
 
 async function removeFile(a) {
   if (!confirm(t('attachment.confirmDelete', { name: a.name }))) return
-  await api.removeAttachment(a.id)
-  emit('changed')
+  uploadError.value = ''
+  try {
+    await api.removeAttachment(a.id)
+    emit('changed')
+  } catch (err) {
+    uploadError.value = err.message
+  }
 }
 </script>
 

@@ -45,8 +45,33 @@ class Application(models.Model):
     response_date = models.DateField(null=True, blank=True)
     rejection_reason = models.TextField(blank=True)
 
+    # Coordinates for the map view. They are looked up from the address, not typed in.
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    # "" = not looked up yet, "address" = street level, "city" = only the town, "failed" = no match
+    geo_precision = models.CharField(max_length=10, blank=True)
+
+    GEO_FIELDS = ("latitude", "longitude", "geo_precision")
+
     class Meta:
         ordering = ["-date", "-id"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._address_key = self._current_address()
+
+    def _current_address(self):
+        return (self.street, self.postal_code, self.city)
+
+    def save(self, *args, **kwargs):
+        # A changed address invalidates the stored coordinates, they are looked up again later.
+        if self.pk and self._address_key != self._current_address():
+            self.latitude = self.longitude = None
+            self.geo_precision = ""
+            if kwargs.get("update_fields") is not None:
+                kwargs["update_fields"] = {*kwargs["update_fields"], *self.GEO_FIELDS}
+        super().save(*args, **kwargs)
+        self._address_key = self._current_address()
 
     def __str__(self):
         return f"{self.company} ({self.get_status_display()})"
@@ -68,9 +93,3 @@ class Attachment(models.Model):
     name = models.CharField(max_length=255, blank=True)
     kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.OTHER)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-uploaded_at"]
-
-    def __str__(self):
-        return self.name

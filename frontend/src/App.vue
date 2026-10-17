@@ -1,8 +1,9 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { api } from './api'
 import { t } from './i18n'
 import { downloadApplications } from './exporter'
+import { VIEWS, loadView, saveView } from './geo'
 import FilterBar from './components/FilterBar.vue'
 import ApplicationTable from './components/ApplicationTable.vue'
 import DetailModal from './components/DetailModal.vue'
@@ -10,6 +11,11 @@ import ApplicationForm from './components/ApplicationForm.vue'
 import FieldSettings from './components/FieldSettings.vue'
 import ImportDialog from './components/ImportDialog.vue'
 import LanguageSwitch from './components/LanguageSwitch.vue'
+import CompanyCards from './components/CompanyCards.vue'
+import GeoBar from './components/GeoBar.vue'
+
+// The map library is only loaded when the map view is opened.
+const CompanyMap = defineAsyncComponent(() => import('./components/CompanyMap.vue'))
 
 const items = ref([])
 const stats = ref({})
@@ -22,9 +28,10 @@ const editing = ref(null) // null = closed, {} = new, {id, ...} = edit
 const detailId = ref(null)
 const showSettings = ref(false)
 const showImport = ref(false)
+const view = ref(loadView()) // 'list', 'cards' or 'map'
 const year = new Date().getFullYear()
 
-const total = computed(() => Object.values(stats.value).reduce((a, b) => a + b, 0))
+const total = computed(() => stats.value.total ?? 0)
 const detail = computed(() => items.value.find((i) => i.id === detailId.value) || null)
 const error = computed(() => (backendDown.value ? t('app.backendDown') : errorText.value))
 
@@ -46,31 +53,38 @@ async function load() {
   }
 }
 
-async function save(id, data) {
+async function mutate(operation) {
   try {
-    id ? await api.update(id, data) : await api.create(data)
-    editing.value = null
-    load()
+    await operation()
+    errorText.value = ''
+    await load()
+    return true
   } catch (e) {
+    backendDown.value = false
     errorText.value = e.message
+    return false
+  }
+}
+
+async function save(id, data) {
+  const saved = await mutate(() => id ? api.update(id, data) : api.create(data))
+  if (saved) {
+    editing.value = null
   }
 }
 
 async function changeStatus(item, status) {
-  await api.update(item.id, { status })
-  load()
+  await mutate(() => api.update(item.id, { status }))
 }
 
 async function toggleFavorite(item) {
-  await api.update(item.id, { is_favorite: !item.is_favorite })
-  load()
+  await mutate(() => api.update(item.id, { is_favorite: !item.is_favorite }))
 }
 
 async function remove(item) {
   if (!confirm(t('app.confirmDelete', { name: item.company }))) return
-  await api.remove(item.id)
-  if (detailId.value === item.id) detailId.value = null
-  load()
+  const removed = await mutate(() => api.remove(item.id))
+  if (removed && detailId.value === item.id) detailId.value = null
 }
 
 async function exportData() {
@@ -106,8 +120,9 @@ let timer
 watch(search, () => { clearTimeout(timer); timer = setTimeout(load, 250) })
 watch(statusFilter, load)
 watch(favoriteOnly, load)
+watch(view, saveView)
 onMounted(() => { load(); window.addEventListener('keydown', onKey) })
-onUnmounted(() => window.removeEventListener('keydown', onKey))
+onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', onKey) })
 </script>
 
 <template>
@@ -130,7 +145,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
   </header>
 
   <main>
-    <h1>{{ t('app.title') }}</h1>
+    <div class="page-head">
+      <h1>{{ t('app.title') }}</h1>
+      <div class="view-switch" role="group" :aria-label="t('view.label')">
+        <button
+          v-for="v in VIEWS"
+          :key="v"
+          :class="{ active: view === v }"
+          :aria-pressed="view === v"
+          @click="view = v"
+        >{{ t(`view.${v}`) }}</button>
+      </div>
+    </div>
 
     <FilterBar
       v-model:search="search"
@@ -142,15 +168,27 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
     <p v-if="error" class="error">{{ error }}</p>
 
-    <ApplicationTable
-      v-if="items.length"
-      :items="sortedItems"
-      @open="(i) => (detailId = i.id)"
-      @edit="(i) => (editing = i)"
-      @remove="remove"
-      @status="changeStatus"
-      @favorite="toggleFavorite"
-    />
+    <template v-if="items.length">
+      <ApplicationTable
+        v-if="view === 'list'"
+        :items="sortedItems"
+        @open="(i) => (detailId = i.id)"
+        @edit="(i) => (editing = i)"
+        @remove="remove"
+        @status="changeStatus"
+        @favorite="toggleFavorite"
+      />
+      <template v-else>
+        <GeoBar :items="items" @changed="load" />
+        <CompanyCards
+          v-if="view === 'cards'"
+          :items="sortedItems"
+          @open="(i) => (detailId = i.id)"
+          @favorite="toggleFavorite"
+        />
+        <CompanyMap v-else :items="sortedItems" @open="(i) => (detailId = i.id)" />
+      </template>
+    </template>
     <p v-else-if="!error" class="empty">{{ t('app.empty') }}</p>
 
     <DetailModal

@@ -9,7 +9,13 @@
 
 ## Preview
 
-![alt text](frontend/src/assets/screenshot/screenshot-application-tracker.png)
+<p align="center">
+  <img src="frontend/src/assets/screenshot/preview-list.jpg" alt="Anonymisierte Listenansicht" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-cards.jpg" alt="Anonymisierte Kartenansicht" width="48%">
+</p>
+<p align="center">
+  <img src="frontend/src/assets/screenshot/preview-map.jpg" alt="Anonymisierte Kartenansicht mit ausgeblendetem Kartenausschnitt" width="85%">
+</p>
 
 A web app to keep track of job applications, from the first contact to the final answer. The backend is a Django REST API with a SQLite database, the frontend is a Vue 3 single-page app built with Vite.
 
@@ -27,7 +33,10 @@ This project is under active development. Features and the data model may still 
 - Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view. Hidden fields are not deleted, their data stays stored and can be shown again at any time
 - Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
 - Document attachments per application (cover letter, CV, certificate, other)
-- Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview. Companies that already exist are skipped
+- List, card and map views for applications
+- Optional home address stored in the browser, with approximate distances to application locations
+- Address lookup through OpenStreetMap Nominatim; coordinates and lookup status are saved with applications
+- Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview and a choice to update existing applications or import only new companies
 - CSV export of all applications, in the same format as the import template, so an export can be imported again
 - Header with navigation and a footer in the project color palette
 - German and English interface with a language switch, the choice is remembered in the browser
@@ -36,7 +45,7 @@ This project is under active development. Features and the data model may still 
 
 | Layer | Technology |
 |---|---|
-| Frontend | Vue 3 (Composition API), Vite, plain CSS |
+| Frontend | Vue 3 (Composition API), Vite, Leaflet, plain CSS |
 | Backend | Django, Django REST Framework, django-cors-headers |
 | Database | SQLite |
 | File storage | Local filesystem (`backend/media/`) |
@@ -69,14 +78,15 @@ Listed in `frontend/package.json`:
 
 | Package | Version | Type | Purpose |
 |---|---|---|---|
-| vue | ^3.5.0 | dependency | UI framework |
-| vite | ^6.0.0 | dev dependency | Dev server and build tool |
-| @vitejs/plugin-vue | ^5.2.0 | dev dependency | Vue single-file component support for Vite |
+| vue | ^3.5.42 | dependency | UI framework |
+| leaflet | ^1.9.4 | dependency | Interactive map |
+| vite | ^8.3.0 | dev dependency | Dev server and build tool |
+| @vitejs/plugin-vue | ^6.0.8 | dev dependency | Vue single-file component support for Vite |
 
 ```bash
 npm install
 # or, when setting the project up from scratch
-npm install vue
+npm install vue leaflet
 npm install -D vite @vitejs/plugin-vue
 ```
 
@@ -105,6 +115,7 @@ application-tracker/
         ├── App.vue             Layout (header, footer), state and data loading
         ├── api.js              API client
         ├── constants.js        Status keys and date helpers
+        ├── geo.js              Map state, geocoding and distance helpers
         ├── fields.js           Field catalog and visibility settings
         ├── exporter.js         CSV export and import template download
         ├── i18n.js             German and English texts
@@ -116,7 +127,10 @@ application-tracker/
             ├── DetailModal.vue
             ├── FieldSettings.vue
             ├── ImportDialog.vue
-            └── LanguageSwitch.vue
+            ├── LanguageSwitch.vue
+            ├── CompanyCards.vue
+            ├── CompanyMap.vue
+            └── GeoBar.vue
 ```
 
 ## Getting Started
@@ -166,8 +180,9 @@ Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django
 - **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
 - **Fields:** the Fields entry lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
 - **Documents:** open an application, pick a type and attach files. Allowed types are PDF, Word, ODT, TXT, PNG and JPG, up to 10 MB per file.
-- **Import:** open Import, download the template if needed, choose a file and review the preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized. Companies that already exist are skipped.
+- **Import:** open Import, download the template if needed, choose a file and review the dry-run preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized; unknown columns are shown as ignored. Choose whether to add new companies and update existing applications or import new companies only. Existing companies are matched case-insensitively after whitespace normalization. In update mode, non-empty imported values update the oldest matching application; empty cells do not erase saved data. Repeated companies in the same file are counted as duplicates.
 - **Export:** the Export entry downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
+- **Views and locations:** switch between list, cards and map. In cards or map view, you can optionally enter your home address to see distances; it is stored only in this browser. Use the location lookup to geocode application addresses. Addresses are sent to OpenStreetMap Nominatim, and coordinates and lookup status are saved with the application. Requests are rate-limited; a batch may take several seconds. Applications without a match can be retried.
 - **Language:** switch between DE and EN in the header.
 
 ## API
@@ -177,11 +192,14 @@ Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django
 | GET, POST | `/api/applications/` | List (`?search=`, `?status=`, `?favorite=1`) and create |
 | GET, PATCH, DELETE | `/api/applications/<id>/` | Read, update and delete one application |
 | GET | `/api/applications/stats/` | Number of applications per status |
-| POST | `/api/applications/import/` | Import a company list (multipart: `file`, optional `dry_run`, `default_status`) |
+| POST | `/api/applications/import/` | Preview or import a company list (multipart: `file`, optional `dry_run`, `default_status`, `mode`) |
+| POST | `/api/applications/geocode/` | Geocode a batch of application addresses; send `{"retry":"1"}` to retry failed lookups |
+| POST | `/api/geocode/` | Look up one address without saving it on the server |
 | POST | `/api/attachments/` | Upload a file (multipart: `application`, `file`, `kind`) |
 | DELETE | `/api/attachments/<id>/` | Remove an attachment and its file |
 
 Uploaded files are served under `/media/` while `DEBUG` is on.
+Geocoding uses the external OpenStreetMap Nominatim service and must follow its usage policy. It is rate-limited and is not intended for high-volume geocoding.
 
 ## Extending the App
 
@@ -196,6 +214,6 @@ The table, form, detail view, field settings dialog and the CSV export pick it u
 
 ## Notes
 
-- The app has no authentication and is meant for local use. Uploaded documents are served without login. Add authentication before exposing it to a network.
+- The app has no authentication and is meant for local use. Uploaded documents are served without login. Add authentication and configure production settings (including `DEBUG`, `SECRET_KEY` and `ALLOWED_HOSTS`) before exposing it to a network.
 - A backup consists of `backend/db.sqlite3` and the folder `backend/media/`.
 - The `.gitignore` excludes the virtual environment, `node_modules`, the SQLite database and the media folder, so personal data stays out of the repository.

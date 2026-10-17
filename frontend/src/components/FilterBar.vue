@@ -17,7 +17,7 @@ const favorite = defineModel('favorite')
       :class="{ active: status === key }"
       @click="status = status === key ? '' : key"
     >
-      {{ t(`status.${key}`) }} {{ stats[key] || 0 }}
+      {{ t(`status.${key}`) }} {{ stats.by_status?.[key] || 0 }}
     </button>
     <button :class="{ active: favorite }" @click="favorite = !favorite">{{ t('filter.favorites') }}</button>
     <input v-model="search" type="search" :placeholder="t('filter.search')" />
