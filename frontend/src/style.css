@@ -29,7 +29,7 @@ h1 { display: inline-block; margin: 0 0 1.5rem; font-size: 1.4rem; font-weight: 
 
 /* ---- site header and footer ---- */
 .site-header { background: var(--yellow); color: var(--ink); border-bottom: 1px solid var(--yellow-line); }
-.site-footer { background: var(--ink); color: var(--bg); border-top: 3px solid var(--yellow); }
+.site-footer { background: var(--ink); color: var(--bg); border-top: 3px solid var(--yellow); position: sticky; bottom: 0; z-index: 1100; }
 .bar { max-width: 1400px; margin: 0 auto; padding: .6rem 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.5rem; }
 .brand { font-size: 1.15rem; font-weight: 700; color: var(--ink); text-decoration: none; }
 .site-nav { display: flex; flex-wrap: wrap; gap: .25rem; }
@@ -38,7 +38,7 @@ h1 { display: inline-block; margin: 0 0 1.5rem; font-size: 1.4rem; font-weight: 
 .site-nav button.active { background: var(--green); color: var(--surface); }
 .bar-end { margin-left: auto; display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; }
 .site-header :focus-visible { outline-color: var(--ink); }
-.site-footer .bar { justify-content: space-between; padding-top: 1rem; padding-bottom: 1rem; font-size: .85rem; }
+.site-footer .bar { justify-content: space-between; padding-top: .6rem; padding-bottom: .6rem; font-size: .85rem; }
 .site-footer p { margin: 0; }
 
 /* ---- controls ---- */
@@ -83,6 +83,7 @@ td.fav { width: 2rem; padding-right: 0; }
 
 /* A colored bar on the left marks the status, the same colors as on the cards and the map. */
 tr.unsure td { font-style: italic; }
+tr.planned td:first-child { box-shadow: inset 4px 0 0 var(--planned); }
 tr.unsure td:first-child { box-shadow: inset 4px 0 0 var(--unsure); }
 tr.applied td:first-child { box-shadow: inset 4px 0 0 var(--applied); }
 tr.interview td:first-child { box-shadow: inset 4px 0 0 var(--yellow); }
@@ -98,7 +99,7 @@ tbody tr:hover td.overdue { background: var(--yellow-soft); }
 .error { color: var(--danger-ink); background: var(--danger-soft); font-weight: 600; box-shadow: inset 4px 0 0 var(--danger); padding: .75rem 1rem; }
 
 /* ---- dialogs ---- */
-.overlay { position: fixed; inset: 0; background: rgba(245, 247, 248, .9); display: grid; place-items: center; padding: 1rem; overflow-y: auto; }
+.overlay { position: fixed; inset: 0; z-index: 1200; background: rgba(245, 247, 248, .9); display: grid; place-items: center; padding: 1rem; overflow-y: auto; }
 .dialog { background: var(--surface); border: 1px solid var(--green); border-top: 4px solid var(--yellow); padding: 1.5rem; width: min(640px, 100%); display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: dense; gap: .8rem; }
 .dialog h2 { grid-column: 1 / -1; margin: 0; font-size: 1.1rem; font-weight: 600; }
 .dialog label { display: grid; gap: .25rem; font-size: .85rem; color: var(--mid); }
@@ -189,6 +190,17 @@ button.link { border: none; background: none; padding: 0; color: var(--green); t
 .badge.interview { background: var(--yellow-soft); border-color: var(--yellow); color: var(--yellow-ink); }
 .badge.rejected { background: var(--danger-soft); border-color: var(--danger); color: var(--danger-ink); }
 .badge.offer { background: var(--offer); border-color: var(--offer); color: var(--surface); }
+select.badge { width: auto; padding: .2rem .4rem; font-size: .8rem; cursor: pointer; }
+select.badge option { background: var(--surface); color: var(--ink); font-style: normal; }
+
+/* small color dot in the status filters, same colors as the badges */
+.swatch { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; margin-right: .3rem; border: 1.5px solid var(--planned); background: var(--surface); vertical-align: -1px; }
+.swatch.unsure { background: var(--unsure); border-color: var(--unsure); }
+.swatch.applied { background: var(--applied); border-color: var(--applied); }
+.swatch.interview { background: var(--yellow); border-color: var(--yellow-line); }
+.swatch.rejected { background: var(--danger); border-color: var(--danger); }
+.swatch.offer { background: var(--offer); border-color: var(--offer); }
+.filters button.active .swatch { border-color: var(--surface); }
 
 .map { height: min(70vh, 640px); min-height: 360px; border: 1px solid var(--line); background: var(--tint); }
 .map-note { margin: .5rem 0 0; }

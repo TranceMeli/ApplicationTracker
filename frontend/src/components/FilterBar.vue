@@ -17,6 +17,7 @@ const favorite = defineModel('favorite')
       :class="{ active: status === key }"
       @click="status = status === key ? '' : key"
     >
+      <span class="swatch" :class="key" aria-hidden="true"></span>
       {{ t(`status.${key}`) }} {{ stats.by_status?.[key] || 0 }}
     </button>
     <button :class="{ active: favorite }" @click="favorite = !favorite">{{ t('filter.favorites') }}</button>

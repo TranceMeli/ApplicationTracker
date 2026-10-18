@@ -42,6 +42,8 @@ const overdue = (i) => i.follow_up && i.follow_up <= today() && i.status === 'ap
             </template>
             <select
               v-else-if="f.key === 'status'"
+              class="badge"
+              :class="i.status"
               :value="i.status"
               @click.stop
               @change="$emit('status', i, $event.target.value)"
