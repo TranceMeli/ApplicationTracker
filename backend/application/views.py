@@ -1,4 +1,3 @@
-from django.db import models as dj_models
 from django.db.models import Count, Q
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view
@@ -13,31 +12,21 @@ from .serializers import ApplicationSerializer, AttachmentSerializer
 MAX_IMPORT_SIZE = 5 * 1024 * 1024  # 5 MB
 GEOCODE_BATCH = 8  # lookups per request, Nominatim allows one per second
 
-TEXT_SEARCH_FIELDS = ("company", "position", "contact", "email", "phone", "city", "notes")
+TEXT_SEARCH_FIELDS = ("company", "position", "contact_person", "email", "phone", "city", "notes")
 
-
-def _file_fields(model):
-    return [f.name for f in model._meta.get_fields() if isinstance(f, dj_models.FileField)]
-
-
-def _delete_files(attachment):
-    """Removes the stored file of an attachment from disk."""
-    for name in _file_fields(Attachment):
-        stored = getattr(attachment, name, None)
-        if stored:
-            stored.delete(save=False)
+# Concrete columns only: sorting by a relation (attachments) would duplicate rows.
+FIELD_NAMES = {f.name for f in Application._meta.concrete_fields}
 
 
 class ApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationSerializer
 
     def get_queryset(self):
-        queryset = Application.objects.all()
+        queryset = Application.objects.prefetch_related("attachments")
         params = self.request.query_params
-        field_names = {f.name for f in Application._meta.get_fields()}
 
         for key in ("status", "channel", "work_mode"):
-            if params.get(key) and key in field_names:
+            if params.get(key):
                 queryset = queryset.filter(**{key: params[key]})
 
         favorite = params.get("favorite", params.get("is_favorite"))
@@ -48,20 +37,13 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         if search:
             query = Q()
             for name in TEXT_SEARCH_FIELDS:
-                if name in field_names:
-                    query |= Q(**{f"{name}__icontains": search})
+                query |= Q(**{f"{name}__icontains": search})
             queryset = queryset.filter(query)
 
         ordering = params.get("ordering")
-        if ordering and ordering.lstrip("-") in field_names:
+        if ordering and ordering.lstrip("-") in FIELD_NAMES:
             queryset = queryset.order_by(ordering, "-id")
         return queryset
-
-    def perform_destroy(self, instance):
-        # Delete stored files too, not only the database rows.
-        for attachment in Attachment.objects.filter(application=instance):
-            _delete_files(attachment)
-        instance.delete()
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
@@ -130,10 +112,6 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         if application:
             queryset = queryset.filter(application_id=application)
         return queryset
-
-    def perform_destroy(self, instance):
-        _delete_files(instance)
-        instance.delete()
 
 
 @api_view(["POST"])

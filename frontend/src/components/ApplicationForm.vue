@@ -1,24 +1,24 @@
 <script setup>
 import { reactive } from 'vue'
 import { today } from '../constants'
-import { FIELDS, FORM_FIELDS, visibleFormFields } from '../fields'
+import { FORM_FIELDS, visibleFormFields } from '../fields'
 import { t } from '../i18n'
 
-const props = defineProps({ item: Object }) // {} = new application
+const props = defineProps({ item: Object, error: String }) // item {} = new application
 const emit = defineEmits(['save', 'close'])
 
+const KEYS = [...FORM_FIELDS.map((f) => f.key), 'is_favorite']
+const defaults = { date: today(), status: 'applied', is_favorite: false }
+
 // Hidden fields stay in the form object, so their saved data is sent back unchanged.
-const form = reactive({
-  ...Object.fromEntries(FORM_FIELDS.map((f) => [f.key, ''])),
-  date: today(),
-  status: 'applied',
-  is_favorite: false,
-  ...props.item,
-})
+// Only editable fields are copied, not id, attachments or the looked-up coordinates.
+const form = reactive(
+  Object.fromEntries(KEYS.map((key) => [key, props.item[key] ?? (props.item.id ? '' : defaults[key] ?? '')])),
+)
 
 function submit() {
   const data = { ...form }
-  for (const f of FIELDS) if (f.type === 'date') data[f.key] = data[f.key] || null
+  for (const f of FORM_FIELDS) if (f.type === 'date') data[f.key] = data[f.key] || null
   emit('save', props.item.id, data)
 }
 </script>
@@ -47,6 +47,7 @@ function submit() {
       </label>
 
       <label class="wide check"><input v-model="form.is_favorite" type="checkbox" /> {{ t('field.favoriteMark') }}</label>
+      <p v-if="error" class="error wide">{{ error }}</p>
       <div class="buttons">
         <button type="button" @click="$emit('close')">{{ t('btn.cancel') }}</button>
         <button class="primary" type="submit">{{ t('btn.save') }}</button>

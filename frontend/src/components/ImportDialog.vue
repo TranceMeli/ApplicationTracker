@@ -24,7 +24,7 @@ const canImport = computed(
 
 // The favorite flag is called "favorite" in the file columns and "is_favorite" in the data.
 const fieldLabel = (key) =>
-  t(key === 'is_favorite' ? 'field.favorite' : (FIELDS.find((f) => f.key === key)?.label ?? key))
+  t(['favorite', 'is_favorite'].includes(key) ? 'field.favorite' : (FIELDS.find((f) => f.key === key)?.label ?? key))
 
 const recognized = computed(() => (result.value?.columns ?? []).map(fieldLabel).join(', '))
 const preview = computed(() =>

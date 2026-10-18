@@ -5,7 +5,7 @@ import { KIND_KEYS, fmt } from '../constants'
 import { visibleFormFields } from '../fields'
 import { t } from '../i18n'
 
-const props = defineProps({ item: Object })
+const props = defineProps({ item: Object, number: Number })
 const emit = defineEmits(['close', 'edit', 'remove', 'changed'])
 
 const ADDRESS = ['street', 'postal_code', 'city']
@@ -88,7 +88,7 @@ async function removeFile(a) {
   <div class="overlay" @click.self="$emit('close')">
     <section class="dialog detail">
       <h2>{{ item.company }}</h2>
-      <p class="sub">{{ item.position || t('detail.noPosition') }} · {{ t('table.nr') }} {{ item.id }}</p>
+      <p class="sub">{{ item.position || t('detail.noPosition') }} · {{ t('table.nr') }} {{ number || item.id }}</p>
       <dl>
         <template v-for="r in rows" :key="r.key">
           <dt>{{ t(r.label) }}</dt>

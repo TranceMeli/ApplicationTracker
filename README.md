@@ -169,7 +169,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django on port 8000, so both servers must be running. Restart the dev server after changes to `vite.config.js`.
+Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django on port 8000, so both servers must be running. If Django runs on another port, set `API_URL` (for example `API_URL=http://localhost:8001 npm run dev`). Restart the dev server after changes to `vite.config.js`.
 
 ## Usage
 

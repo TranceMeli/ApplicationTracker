@@ -280,14 +280,20 @@ const messages = {
 
 export const LOCALES = Object.keys(messages)
 
-const stored = localStorage.getItem('locale')
+// Storage can be blocked (private mode, strict settings); the app must still start.
+let stored = null
+try {
+  stored = localStorage.getItem('locale')
+} catch {}
 export const locale = ref(LOCALES.includes(stored) ? stored : 'de')
 document.documentElement.lang = locale.value
 
 export function setLocale(l) {
   locale.value = l
-  localStorage.setItem('locale', l)
   document.documentElement.lang = l
+  try {
+    localStorage.setItem('locale', l)
+  } catch {}
 }
 
 // Reads locale.value, so every template that calls t() re-renders on language change.

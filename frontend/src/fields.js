@@ -46,7 +46,17 @@ function load() {
 }
 
 export const settings = reactive(load())
-watch(settings, () => localStorage.setItem(KEY, JSON.stringify(settings)), { deep: true })
+watch(
+  settings,
+  () => {
+    try {
+      localStorage.setItem(KEY, JSON.stringify(settings))
+    } catch {
+      /* storage may be blocked, the settings then last for this session */
+    }
+  },
+  { deep: true },
+)
 export const resetSettings = () => Object.assign(settings, defaults())
 
 export const TABLE_FIELDS = FIELDS.filter((f) => f.tableable)

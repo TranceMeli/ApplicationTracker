@@ -354,6 +354,12 @@ def run_import(upload, dry_run=False, default_status="planned", update_existing=
             errors.append({"row": number, "code": "missing_company"})
             continue
 
+        identity = company_key(data["company"])
+        if identity in seen:
+            duplicates += 1  # the same company twice in one file, only the first row counts
+            continue
+        seen.add(identity)
+
         data["email"] = re.sub(r"^mailto:", "", data["email"], flags=re.IGNORECASE)
         data["phone"] = re.sub(r"^tel:", "", data["phone"], flags=re.IGNORECASE)
         if data["email"] and "@" not in data["email"]:
@@ -377,12 +383,6 @@ def run_import(upload, dry_run=False, default_status="planned", update_existing=
             except ValueError:
                 dates[key] = None
                 warnings.append({"row": number, "code": "invalid_date", "value": as_text(value)})
-
-        identity = company_key(data["company"])
-        if identity in seen:
-            duplicates += 1  # the same company twice in one file, only the first row counts
-            continue
-        seen.add(identity)
 
         match = by_company.get(identity)
         if match:

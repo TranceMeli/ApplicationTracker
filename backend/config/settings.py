@@ -132,3 +132,10 @@ MAILERS = {
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# The app has no user accounts. Without session authentication, a login to the Django
+# admin (same host, other port) does not make DRF demand a CSRF token for API calls.
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'UNAUTHENTICATED_USER': None,
+}

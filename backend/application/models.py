@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 
 class Application(models.Model):
@@ -93,3 +95,14 @@ class Attachment(models.Model):
     name = models.CharField(max_length=255, blank=True)
     kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.OTHER)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name or self.file.name
+
+
+@receiver(post_delete, sender=Attachment)
+def delete_attachment_file(sender, instance, **kwargs):
+    # Runs for every way a row disappears (API, admin, cascade from its application),
+    # so no file is left behind on disk.
+    if instance.file:
+        instance.file.delete(save=False)

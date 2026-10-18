@@ -6,8 +6,20 @@ async function request(url, options = {}) {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`)
+  if (!res.ok) throw new Error(await errorMessage(res))
   return res.status === 204 ? null : res.json()
+}
+
+// DRF answers {"field": ["message"]}; show that as "field: message" instead of raw JSON.
+async function errorMessage(res) {
+  const text = await res.text()
+  try {
+    const data = JSON.parse(text)
+    if (data && typeof data === 'object') {
+      return Object.entries(data).map(([key, value]) => `${key}: ${[].concat(value).join(' ')}`).join(' · ')
+    }
+  } catch {}
+  return `HTTP ${res.status}`
 }
 
 export const api = {
@@ -31,7 +43,6 @@ export const api = {
     return res.json()
   },
   removeAttachment: (id) => request(`${FILES}${id}/`, { method: 'DELETE' }),
-
 
   async importList(file, dryRun, defaultStatus, mode = 'update') {
     const body = new FormData()
