@@ -14,12 +14,13 @@ let layer
 let line
 let lastFit = ''
 
+// Same status colors as in style.css (--planned, --unsure, ...). Planned is a white dot with a dark ring.
 const COLORS = {
-  planned: '#45474B',
-  unsure: '#8A8C90',
-  applied: '#495E57',
+  planned: '#FFFFFF',
+  unsure: '#7D6BA8',
+  applied: '#3D7A94',
   interview: '#F4CE14',
-  rejected: '#B8BABD',
+  rejected: '#B5523F',
   offer: '#2F7D4F',
 }
 
