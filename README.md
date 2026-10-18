@@ -10,12 +10,14 @@
 ## Preview
 
 <p align="center">
-  <img src="frontend/src/assets/screenshot/preview-list.jpg" alt="Anonymisierte Listenansicht" width="48%">
-  <img src="frontend/src/assets/screenshot/preview-cards.jpg" alt="Anonymisierte Kartenansicht" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-list.jpg" alt="Listenansicht mit Statusfarben" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-cards.jpg" alt="Kartenansicht mit Entfernungen zum eigenen Standort" width="48%">
 </p>
 <p align="center">
-  <img src="frontend/src/assets/screenshot/preview-map.jpg" alt="Anonymisierte Kartenansicht mit ausgeblendetem Kartenausschnitt" width="85%">
+  <img src="frontend/src/assets/screenshot/preview-map.jpg" alt="Kartenansicht mit Standorten der Bewerbungen" width="85%">
 </p>
+
+The screenshots show fictitious demo data; companies, people and addresses are made up.
 
 A web app to keep track of job applications, from the first contact to the final answer. The backend is a Django REST API with a SQLite database, the frontend is a Vue 3 single-page app built with Vite.
 
