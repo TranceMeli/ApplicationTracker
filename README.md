@@ -26,10 +26,11 @@ This project is under active development. Features and the data model may still 
 - Track applications with company, position, contact person, dates, status, notes and more
 - Status workflow: planned, unsure, applied, interview, rejected, offer
 - Favorites with a star marker and a favorites filter
-- Live search and status filter with counters
+- Live search (company, position, contact person, email, phone, city, notes) and status filter with counters
+- Status colors that are the same in the table, on the cards and on the map
 - Consecutive numbering of the applications in the table and detail view
 - Detail view in a modal dialog
-- Highlighting of overdue follow-ups
+- Highlighting of overdue follow-ups (applications with status applied whose follow-up date has passed)
 - Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view. Hidden fields are not deleted, their data stays stored and can be shown again at any time
 - Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
 - Document attachments per application (cover letter, CV, certificate, other)
@@ -37,8 +38,8 @@ This project is under active development. Features and the data model may still 
 - Optional home address stored in the browser, with approximate distances to application locations
 - Address lookup through OpenStreetMap Nominatim; coordinates and lookup status are saved with applications
 - Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview and a choice to update existing applications or import only new companies
-- CSV export of all applications, in the same format as the import template, so an export can be imported again
-- Header with navigation and a footer in the project color palette
+- CSV export of all applications with every field (also the hidden ones), in the same format as the import template, so an export can be imported again
+- Header with navigation and a footer that stays at the bottom of the window
 - German and English interface with a language switch, the choice is remembered in the browser
 
 ## Tech Stack
@@ -105,8 +106,10 @@ application-tracker/
 │       ├── serializers.py      API serializers and upload validation
 │       ├── views.py            ViewSets, filtering, statistics, import endpoint
 │       ├── importer.py         File readers and company list import
+│       ├── geocoding.py        Address lookup with OpenStreetMap Nominatim
 │       ├── urls.py             API routes
-│       └── admin.py
+│       ├── admin.py            Admin with attachments as inline
+│       └── tests.py            API, attachment and import tests
 └── frontend/
     ├── package.json
     ├── vite.config.js          Dev server with proxy to the backend
@@ -119,7 +122,7 @@ application-tracker/
         ├── fields.js           Field catalog and visibility settings
         ├── exporter.js         CSV export and import template download
         ├── i18n.js             German and English texts
-        ├── style.css
+        ├── style.css           Color palette (CSS variables) and layout
         └── components/
             ├── FilterBar.vue
             ├── ApplicationTable.vue
@@ -153,7 +156,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The API runs on http://localhost:8000. An admin user is optional and only needed for `/admin`:
+The API runs on http://localhost:8000; the root URL redirects to the API overview at `/api/`. If port 8000 is taken, start it on another port, for example `python manage.py runserver 8001`, and point the frontend to it (see below). An admin user is optional and only needed for `/admin`:
 
 ```bash
 python manage.py createsuperuser
@@ -169,13 +172,29 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django on port 8000, so both servers must be running. If Django runs on another port, set `API_URL` (for example `API_URL=http://localhost:8001 npm run dev`). Restart the dev server after changes to `vite.config.js`.
+Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django on port 8000, so both servers must be running. If Django runs on another port, set `API_URL`:
+
+```bash
+API_URL=http://localhost:8001 npm run dev        # macOS, Linux, Git Bash
+$env:API_URL="http://localhost:8001"; npm run dev  # PowerShell
+```
+
+Restart the dev server after changes to `vite.config.js`.
+
+### Tests
+
+```bash
+cd backend
+python manage.py test
+```
+
+The tests cover the API (search, ordering, file cleanup), attachment uploads and the import.
 
 ## Usage
 
 - **Navigation:** the header gives access to the list, the import, the export and the field settings. The application name and the Applications entry reset search and filters.
 - **New application:** use the button in the header. Only the company is required.
-- **Status:** change it directly in the table, or filter by it with the buttons above the table.
+- **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (petrol), interview (yellow), rejected (rust, name crossed out) and offer (green). The colors are defined as CSS variables at the top of `frontend/src/style.css`.
 - **Favorites:** click the star in the table. The favorites button filters the list.
 - **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
 - **Fields:** the Fields entry lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
@@ -189,16 +208,17 @@ Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET, POST | `/api/applications/` | List (`?search=`, `?status=`, `?favorite=1`) and create |
-| GET, PATCH, DELETE | `/api/applications/<id>/` | Read, update and delete one application |
+| GET, POST | `/api/applications/` | List (`?search=`, `?status=`, `?channel=`, `?work_mode=`, `?favorite=1`, `?ordering=`) and create |
+| GET, PATCH, DELETE | `/api/applications/<id>/` | Read, update and delete one application; deleting also removes its files |
 | GET | `/api/applications/stats/` | Number of applications per status |
 | POST | `/api/applications/import/` | Preview or import a company list (multipart: `file`, optional `dry_run`, `default_status`, `mode`) |
 | POST | `/api/applications/geocode/` | Geocode a batch of application addresses; send `{"retry":"1"}` to retry failed lookups |
 | POST | `/api/geocode/` | Look up one address without saving it on the server |
-| POST | `/api/attachments/` | Upload a file (multipart: `application`, `file`, `kind`) |
+| GET, POST | `/api/attachments/` | List (`?application=<id>`) and upload a file (multipart: `application`, `file`, `kind`) |
 | DELETE | `/api/attachments/<id>/` | Remove an attachment and its file |
 
-Uploaded files are served under `/media/` while `DEBUG` is on.
+Uploaded files are served under `/media/` while `DEBUG` is on. Files are removed from disk whenever their attachment is deleted, also through the admin or when the application is deleted.
+Error responses carry codes (for example `file_type` or `no_company_column`) that the frontend translates.
 Geocoding uses the external OpenStreetMap Nominatim service and must follow its usage policy. It is rate-limited and is not intended for high-volume geocoding.
 
 ## Extending the App
@@ -214,6 +234,6 @@ The table, form, detail view, field settings dialog and the CSV export pick it u
 
 ## Notes
 
-- The app has no authentication and is meant for local use. Uploaded documents are served without login. Add authentication and configure production settings (including `DEBUG`, `SECRET_KEY` and `ALLOWED_HOSTS`) before exposing it to a network.
+- The app has no authentication and is meant for local use. Uploaded documents are served without login. Session authentication is switched off for the API, so a login to the Django admin does not cause CSRF errors in the app. Add authentication and configure production settings (including `DEBUG`, `SECRET_KEY` and `ALLOWED_HOSTS`) before exposing it to a network.
 - A backup consists of `backend/db.sqlite3` and the folder `backend/media/`.
-- The `.gitignore` excludes the virtual environment, `node_modules`, the SQLite database and the media folder, so personal data stays out of the repository.
+- The `.gitignore` excludes the virtual environment, `node_modules`, the build output, the SQLite database, the media folder, `.env` files and local editor and Claude Code settings, so personal data stays out of the repository.
