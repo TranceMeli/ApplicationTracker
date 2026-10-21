@@ -17,11 +17,11 @@ let lastFit = ''
 // Same status colors as in style.css (--planned, --unsure, ...). Planned is a white dot with a dark ring.
 const COLORS = {
   planned: '#FFFFFF',
-  unsure: '#7D6BA8',
-  applied: '#3D7A94',
-  interview: '#F4CE14',
-  rejected: '#B5523F',
-  offer: '#2F7D4F',
+  unsure: '#8F6BC4',
+  applied: '#2F7BE0',
+  interview: '#F0A020',
+  rejected: '#D6453D',
+  offer: '#2F8A3E',
 }
 
 const placed = computed(() => props.items.filter(hasCoords))
@@ -96,7 +96,7 @@ function draw() {
     const marker = L.circleMarker(latlng, {
       radius: 8,
       weight: item.geo_precision === 'city' ? 2 : 1.5,
-      color: '#45474B',
+      color: '#1F2328',
       dashArray: item.geo_precision === 'city' ? '3 3' : null,
       fillColor: COLORS[item.status] ?? COLORS.planned,
       fillOpacity: item.geo_precision === 'city' ? 0.55 : 0.9,
@@ -106,7 +106,7 @@ function draw() {
       line?.remove()
       if (home.value) {
         line = L.polyline([[home.value.latitude, home.value.longitude], [item.latitude, item.longitude]], {
-          color: '#495E57',
+          color: '#1F2328',
           weight: 2,
           dashArray: '6 6',
         }).addTo(map)

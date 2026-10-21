@@ -196,7 +196,7 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 
 - **Navigation:** the header gives access to the list, the import, the export and the field settings. The application name and the Applications entry reset search and filters.
 - **New application:** use the button in the header. Only the company is required.
-- **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (petrol), interview (yellow), rejected (rust, name crossed out) and offer (green). The colors are defined as CSS variables at the top of `frontend/src/style.css`.
+- **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (blue), interview (amber), rejected (red, name crossed out) and offer (green). The colors are defined as CSS variables at the top of `frontend/src/style.css`.
 - **Favorites:** click the star in the table. The favorites button filters the list.
 - **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
 - **Fields:** the Fields entry lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
