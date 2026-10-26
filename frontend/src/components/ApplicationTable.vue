@@ -2,6 +2,7 @@
 import { STATUS_KEYS, fmt, today } from '../constants'
 import { visibleTableFields } from '../fields'
 import { t } from '../i18n'
+import CompanyLogo from './CompanyLogo.vue'
 
 defineProps({ items: Array })
 defineEmits(['open', 'edit', 'remove', 'status', 'favorite'])
@@ -36,10 +37,11 @@ const overdue = (i) => i.follow_up && i.follow_up <= today() && i.status === 'ap
             :class="{ overdue: f.key === 'follow_up' && overdue(i), clip: f.type === 'textarea' }"
           >
             <template v-if="f.key === 'id'">{{ n + 1 }}</template>
-            <template v-else-if="f.key === 'company'">
+            <div v-else-if="f.key === 'company'" class="company">
+              <CompanyLogo :item="i" />
               <a v-if="i.link" :href="i.link" target="_blank" rel="noopener" @click.stop>{{ i.company }}</a>
               <span v-else class="name">{{ i.company }}</span>
-            </template>
+            </div>
             <select
               v-else-if="f.key === 'status'"
               class="badge"

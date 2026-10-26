@@ -1,10 +1,12 @@
 from django.db.models import Count, Q
+from django.http import HttpResponse
 from rest_framework import viewsets
 from rest_framework.decorators import action, api_view
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from .geocoding import GeocodingError, geocode
+from .logos import LogoServiceError, clean_domain, content_type, get_logo
 from .importer import SUPPORTED_EXTENSIONS, ImportFileError, run_import
 from .models import Application, Attachment
 from .serializers import ApplicationSerializer, AttachmentSerializer
@@ -127,3 +129,20 @@ def geocode_address(request):
     if precision == "failed":
         return Response({"code": "not_found"}, status=404)
     return Response({"latitude": lat, "longitude": lon, "precision": precision})
+
+
+@api_view(["GET"])
+def company_logo(request):
+    """The icon of a company domain, 404 when there is none (the app then shows initials)."""
+    domain = clean_domain(request.query_params.get("domain"))
+    if not domain:
+        return Response({"code": "invalid_domain"}, status=400)
+    try:
+        data = get_logo(domain)
+    except LogoServiceError:
+        return Response({"code": "logo_service_unreachable"}, status=502)
+    if data is None:
+        return Response({"code": "not_found"}, status=404)
+    response = HttpResponse(data, content_type=content_type(data))
+    response["Cache-Control"] = "public, max-age=604800"
+    return response

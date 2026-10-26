@@ -4,6 +4,7 @@ import { api } from '../api'
 import { KIND_KEYS, fmt } from '../constants'
 import { visibleFormFields } from '../fields'
 import { t } from '../i18n'
+import CompanyLogo from './CompanyLogo.vue'
 
 const props = defineProps({ item: Object, number: Number })
 const emit = defineEmits(['close', 'edit', 'remove', 'changed'])
@@ -87,7 +88,7 @@ async function removeFile(a) {
 <template>
   <div class="overlay" @click.self="$emit('close')">
     <section class="dialog detail">
-      <h2>{{ item.company }}</h2>
+      <h2 class="company"><CompanyLogo :item="item" large />{{ item.company }}</h2>
       <p class="sub">{{ item.position || t('detail.noPosition') }} · {{ t('table.nr') }} {{ number || item.id }}</p>
       <dl>
         <template v-for="r in rows" :key="r.key">

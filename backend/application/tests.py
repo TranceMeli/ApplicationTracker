@@ -1,5 +1,8 @@
+import io
 import tempfile
+import urllib.error
 from pathlib import Path
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import TestCase, override_settings
@@ -117,3 +120,53 @@ class ImportTests(TestCase):
         self.assertEqual((application.city, application.status), ("Hamburg", "rejected"))
         self.assertEqual(application.geo_precision, "")
         self.assertIsNone(application.latitude)
+
+
+
+class LogoApiTests(TestCase):
+    PNG = bytes([0x89]) + b"PNG" + b"0" * 20
+
+    def setUp(self):
+        self.media = tempfile.TemporaryDirectory()
+        self.addCleanup(self.media.cleanup)
+        override = override_settings(MEDIA_ROOT=self.media.name)
+        override.enable()
+        self.addCleanup(override.disable)
+        self.client = APIClient()
+
+    def answer(self, status=200, body=PNG):
+        response = mock.MagicMock()
+        response.status = status
+        response.read.return_value = body
+        response.__enter__.return_value = response
+        return response
+
+    def get(self, domain):
+        return self.client.get("/api/logo/", {"domain": domain})
+
+    def test_invalid_domains_are_rejected_without_a_request(self):
+        with mock.patch("urllib.request.urlopen") as opened:
+            for bad in ["", "localhost", "a/b.de", "x.de/../y", "exa mple.com", "http://x.de"]:
+                self.assertEqual(self.get(bad).status_code, 400, bad)
+        opened.assert_not_called()
+
+    def test_icon_is_fetched_once_and_then_served_from_disk(self):
+        with mock.patch("urllib.request.urlopen", return_value=self.answer()) as opened:
+            first, second = self.get("example.com"), self.get("Example.com")
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(first["Content-Type"], "image/png")
+        self.assertEqual(second.content, self.PNG)
+        self.assertEqual(opened.call_count, 1)
+
+    def test_missing_icon_is_remembered(self):
+        error = urllib.error.HTTPError("u", 404, "Not Found", {}, io.BytesIO(b"placeholder"))
+        with mock.patch("urllib.request.urlopen", side_effect=error) as opened:
+            self.assertEqual(self.get("nothing.example").status_code, 404)
+            self.assertEqual(self.get("nothing.example").status_code, 404)
+        self.assertEqual(opened.call_count, 1)
+
+    def test_unreachable_service_is_not_remembered(self):
+        with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
+            self.assertEqual(self.get("example.com").status_code, 502)
+        with mock.patch("urllib.request.urlopen", return_value=self.answer()):
+            self.assertEqual(self.get("example.com").status_code, 200)

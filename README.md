@@ -39,6 +39,7 @@ This project is under active development. Features and the data model may still 
 - List, card and map views for applications
 - Optional home address stored in the browser, with approximate distances to application locations
 - Address lookup through OpenStreetMap Nominatim; coordinates and lookup status are saved with applications
+- Optional company logos in the table, on the cards and in the detail view (off by default, switch on under Fields); the initials in the status color are shown when a company has no icon
 - Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview and a choice to update existing applications or import only new companies
 - CSV export of all applications with every field (also the hidden ones), in the same format as the import template, so an export can be imported again
 - Header with navigation and a footer that stays at the bottom of the window
@@ -109,6 +110,7 @@ application-tracker/
 │       ├── views.py            ViewSets, filtering, statistics, import endpoint
 │       ├── importer.py         File readers and company list import
 │       ├── geocoding.py        Address lookup with OpenStreetMap Nominatim
+│       ├── logos.py            Company icons from DuckDuckGo, cached in media/logos/
 │       ├── urls.py             API routes
 │       ├── admin.py            Admin with attachments as inline
 │       └── tests.py            API, attachment and import tests
@@ -121,6 +123,7 @@ application-tracker/
         ├── api.js              API client
         ├── constants.js        Status keys and date helpers
         ├── geo.js              Map state, geocoding and distance helpers
+        ├── logo.js             Company domain, initials and logo setting
         ├── fields.js           Field catalog and visibility settings
         ├── exporter.js         CSV export and import template download
         ├── i18n.js             German and English texts
@@ -134,6 +137,7 @@ application-tracker/
             ├── ImportDialog.vue
             ├── LanguageSwitch.vue
             ├── CompanyCards.vue
+            ├── CompanyLogo.vue
             ├── CompanyMap.vue
             └── GeoBar.vue
 ```
@@ -216,12 +220,14 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 | POST | `/api/applications/import/` | Preview or import a company list (multipart: `file`, optional `dry_run`, `default_status`, `mode`) |
 | POST | `/api/applications/geocode/` | Geocode a batch of application addresses; send `{"retry":"1"}` to retry failed lookups |
 | POST | `/api/geocode/` | Look up one address without saving it on the server |
+| GET | `/api/logo/?domain=<domain>` | Icon of a company domain from the local cache or DuckDuckGo, 404 when there is none |
 | GET, POST | `/api/attachments/` | List (`?application=<id>`) and upload a file (multipart: `application`, `file`, `kind`) |
 | DELETE | `/api/attachments/<id>/` | Remove an attachment and its file |
 
 Uploaded files are served under `/media/` while `DEBUG` is on. Files are removed from disk whenever their attachment is deleted, also through the admin or when the application is deleted.
 Error responses carry codes (for example `file_type` or `no_company_column`) that the frontend translates.
 Geocoding uses the external OpenStreetMap Nominatim service and must follow its usage policy. It is rate-limited and is not intended for high-volume geocoding.
+Company logos are optional. The domain comes from the link of an application, or from its e-mail address unless it belongs to a free mail provider. The server asks DuckDuckGo for the icon of that domain (only the domain is sent, not the browser's address) and stores found icons in `backend/media/logos/`; companies without an icon are not asked again for a week.
 
 ## Extending the App
 

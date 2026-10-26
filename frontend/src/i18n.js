@@ -74,6 +74,9 @@ const messages = {
     'settings.table': 'Tabellenspalten',
     'settings.form': 'Formular und Detailansicht',
     'settings.reset': 'Zurücksetzen',
+    'settings.logos': 'Firmenlogos',
+    'settings.logosShow': 'Logos anzeigen',
+    'settings.logosHint': 'Das Logo kommt von der Domain im Link oder in der E-Mail-Adresse. Dafür sendet der Server diese Domains an DuckDuckGo, die Icons werden lokal gespeichert. Ohne Treffer erscheinen die Initialen.',
 
     'attachment.title': 'Unterlagen',
     'attachment.none': 'Noch keine Unterlagen angehängt.',
@@ -211,6 +214,9 @@ const messages = {
     'settings.table': 'Table columns',
     'settings.form': 'Form and detail view',
     'settings.reset': 'Reset',
+    'settings.logos': 'Company logos',
+    'settings.logosShow': 'Show logos',
+    'settings.logosHint': 'The logo comes from the domain in the link or the e-mail address. The server sends these domains to DuckDuckGo, the icons are stored locally. Without a match, the initials are shown.',
 
     'attachment.title': 'Documents',
     'attachment.none': 'No documents attached yet.',

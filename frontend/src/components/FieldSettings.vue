@@ -1,6 +1,7 @@
 <script setup>
 import { TABLE_FIELDS, FORM_FIELDS, settings, resetSettings } from '../fields'
 import { t } from '../i18n'
+import { logosEnabled } from '../logo'
 
 defineEmits(['close'])
 
@@ -40,6 +41,15 @@ function toggle(list, key) {
           />
           {{ t(f.label) }}
         </label>
+      </fieldset>
+
+      <fieldset class="wide">
+        <legend>{{ t('settings.logos') }}</legend>
+        <label class="check">
+          <input v-model="logosEnabled" type="checkbox" />
+          {{ t('settings.logosShow') }}
+        </label>
+        <p class="sub">{{ t('settings.logosHint') }}</p>
       </fieldset>
 
       <div class="buttons">

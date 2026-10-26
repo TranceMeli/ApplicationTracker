@@ -2,6 +2,7 @@
 import { fmt } from '../constants'
 import { distanceLabel, home } from '../geo'
 import { t } from '../i18n'
+import CompanyLogo from './CompanyLogo.vue'
 
 defineProps({ items: Array })
 defineEmits(['open', 'favorite'])
@@ -21,7 +22,10 @@ const place = (i) => [i.postal_code, i.city].filter(Boolean).join(' ')
       @keydown.enter.self="$emit('open', i)"
     >
       <div class="card-head">
-        <h3 class="card-title">{{ i.company }}</h3>
+        <div class="company">
+          <CompanyLogo :item="i" />
+          <h3 class="card-title">{{ i.company }}</h3>
+        </div>
         <button
           class="star"
           :class="{ on: i.is_favorite }"
