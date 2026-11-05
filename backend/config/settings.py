@@ -36,10 +36,10 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'application',  # before staticfiles, so that its runserver (free port) is the one used
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'application',
 ]
 
 MIDDLEWARE = [
