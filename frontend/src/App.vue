@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { api } from './api'
 import { t } from './i18n'
+import { askConfirm, confirmState } from './confirm'
 import { downloadApplications } from './exporter'
 import { VIEWS, loadView, saveView } from './geo'
 import FilterBar from './components/FilterBar.vue'
@@ -13,6 +14,7 @@ import ImportDialog from './components/ImportDialog.vue'
 import LanguageSwitch from './components/LanguageSwitch.vue'
 import CompanyCards from './components/CompanyCards.vue'
 import GeoBar from './components/GeoBar.vue'
+import ConfirmDialog from './components/ConfirmDialog.vue'
 
 // The map library is only loaded when the map view is opened.
 const CompanyMap = defineAsyncComponent(() => import('./components/CompanyMap.vue'))
@@ -86,7 +88,7 @@ async function toggleFavorite(item) {
 }
 
 async function remove(item) {
-  if (!confirm(t('app.confirmDelete', { name: item.company }))) return
+  if (!(await askConfirm(t('app.confirmDelete', { name: item.company })))) return
   const removed = await mutate(() => api.remove(item.id))
   if (removed && detailId.value === item.id) detailId.value = null
 }
@@ -118,7 +120,7 @@ function editFromDetail() {
 }
 
 function onKey(e) {
-  if (e.key !== 'Escape') return
+  if (e.key !== 'Escape' || confirmState.value) return // the confirm dialog handles its own Escape
   if (showImport.value) showImport.value = false
   else if (showSettings.value) showSettings.value = false
   else if (editing.value) closeForm()
@@ -212,6 +214,7 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
     <ApplicationForm v-if="editing" :item="editing" :error="errorText" @save="save" @close="closeForm" />
     <FieldSettings v-if="showSettings" @close="showSettings = false" />
     <ImportDialog v-if="showImport" @close="showImport = false" @done="load" />
+    <ConfirmDialog v-if="confirmState" />
   </main>
 
   <footer class="site-footer">

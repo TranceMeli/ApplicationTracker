@@ -54,6 +54,7 @@ STATUS_LABELS = {
     "planned": "planned", "geplant": "planned",
     "unsure": "unsure", "unsicher": "unsure",
     "applied": "applied", "beworben": "applied",
+    "initiative": "initiative", "initiativ": "initiative", "initiativbewerbung": "initiative",
     "interview": "interview", "gespräch": "interview", "gespraech": "interview",
     "rejected": "rejected", "absage": "rejected",
     "offer": "offer", "zusage": "offer",

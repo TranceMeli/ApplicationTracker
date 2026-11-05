@@ -1,6 +1,6 @@
 import { locale } from './i18n'
 
-export const STATUS_KEYS = ['planned', 'unsure', 'applied', 'interview', 'rejected', 'offer']
+export const STATUS_KEYS = ['planned', 'unsure', 'applied', 'initiative', 'interview', 'rejected', 'offer']
 
 export const today = () => {
   const now = new Date()

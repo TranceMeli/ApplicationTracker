@@ -26,7 +26,7 @@ This project is under active development. Features and the data model may still 
 ## Features
 
 - Track applications with company, position, contact person, dates, status, notes and more
-- Status workflow: planned, unsure, applied, interview, rejected, offer
+- Status workflow: planned, unsure, applied, initiative (unsolicited application), interview, rejected, offer
 - Favorites with a star marker and a favorites filter
 - Live search (company, position, contact person, email, phone, city, notes) and status filter with counters
 - Status colors that are the same in the table, on the cards and on the map
@@ -162,7 +162,7 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-The API runs on http://localhost:8000; the root URL redirects to the API overview at `/api/`. If port 8000 is taken, start it on another port, for example `python manage.py runserver 8001`, and point the frontend to it (see below). An admin user is optional and only needed for `/admin`:
+`manage.py` uses the Python of `backend/.venv` on its own if it exists, so the activation step is optional. Without an address, `runserver` starts on the first free port from 8000 on, prints it and writes it to `backend/.port`, where the frontend finds it. With an explicit port, for example `python manage.py runserver 8001`, it behaves as usual. The root URL redirects to the API overview at `/api/`. An admin user is optional and only needed for `/admin`:
 
 ```bash
 python manage.py createsuperuser
@@ -178,7 +178,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django on port 8000, so both servers must be running. If Django runs on another port, set `API_URL`:
+Open http://localhost:5173. The dev server proxies `/api` and `/media` to Django, so both servers must be running, backend first: the port is read from `backend/.port` (or is 8000 without it). If Django runs on a port you chose yourself, set `API_URL`:
 
 ```bash
 API_URL=http://localhost:8001 npm run dev        # macOS, Linux, Git Bash
@@ -200,7 +200,7 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 
 - **Navigation:** the header gives access to the list, the import, the export and the field settings. The application name and the Applications entry reset search and filters.
 - **New application:** use the button in the header. Only the company is required.
-- **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (blue), interview (amber), rejected (red, name crossed out) and offer (green). The colors are defined as CSS variables at the top of `frontend/src/style.css`.
+- **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (blue), initiative (teal), interview (amber), rejected (red, name crossed out) and offer (green). The colors are defined as CSS variables at the top of `frontend/src/style.css`.
 - **Favorites:** click the star in the table. The favorites button filters the list.
 - **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
 - **Fields:** the Fields entry lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.

@@ -1,9 +1,11 @@
 <script setup>
+import { vBackdropClose } from '../backdrop'
 import { computed, ref } from 'vue'
 import { api } from '../api'
 import { KIND_KEYS, fmt } from '../constants'
 import { visibleFormFields } from '../fields'
 import { t } from '../i18n'
+import { askConfirm } from '../confirm'
 import CompanyLogo from './CompanyLogo.vue'
 
 const props = defineProps({ item: Object, number: Number })
@@ -74,7 +76,7 @@ async function upload(e) {
 }
 
 async function removeFile(a) {
-  if (!confirm(t('attachment.confirmDelete', { name: a.name }))) return
+  if (!(await askConfirm(t('attachment.confirmDelete', { name: a.name })))) return
   uploadError.value = ''
   try {
     await api.removeAttachment(a.id)
@@ -86,7 +88,7 @@ async function removeFile(a) {
 </script>
 
 <template>
-  <div class="overlay" @click.self="$emit('close')">
+  <div class="overlay" v-backdrop-close="() => $emit('close')">
     <section class="dialog detail">
       <h2 class="company"><CompanyLogo :item="item" large />{{ item.company }}</h2>
       <p class="sub">{{ item.position || t('detail.noPosition') }} · {{ t('table.nr') }} {{ number || item.id }}</p>

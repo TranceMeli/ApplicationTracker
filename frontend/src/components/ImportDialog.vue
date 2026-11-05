@@ -1,4 +1,5 @@
 <script setup>
+import { vBackdropClose } from '../backdrop'
 import { computed, ref } from 'vue'
 import { api } from '../api'
 import { STATUS_KEYS } from '../constants'
@@ -65,7 +66,7 @@ function pick(e) {
 </script>
 
 <template>
-  <div class="overlay" @click.self="$emit('close')">
+  <div class="overlay" v-backdrop-close="() => $emit('close')">
     <section class="dialog import">
       <h2>{{ t('import.title') }}</h2>
       <p class="sub wide">{{ t('import.hint') }}</p>

@@ -16,6 +16,7 @@ const messages = {
     'status.planned': 'Geplant',
     'status.unsure': 'Unsicher',
     'status.applied': 'Beworben',
+    'status.initiative': 'Initiativ',
     'status.interview': 'Gespräch',
     'status.rejected': 'Absage',
     'status.offer': 'Zusage',
@@ -123,7 +124,7 @@ const messages = {
         'app.name': 'Bewerbungs-Tracker',
     'nav.label': 'Hauptnavigation',
     'nav.applications': 'Bewerbungen',
-    'footer.text': 'Platzhaltertext. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.',
+    'footer.text': 'Keep your Applications organized.',
     'export.button': 'Export',
 
         'view.label': 'Ansicht', 'view.list': 'Liste', 'view.cards': 'Karten', 'view.map': 'Karte',
@@ -156,6 +157,7 @@ const messages = {
     'status.planned': 'Planned',
     'status.unsure': 'Unsure',
     'status.applied': 'Applied',
+    'status.initiative': 'Unsolicited',
     'status.interview': 'Interview',
     'status.rejected': 'Rejected',
     'status.offer': 'Offer',
@@ -264,7 +266,7 @@ const messages = {
     'app.name': 'Application Tracker',
     'nav.label': 'Main navigation',
     'nav.applications': 'Applications',
-    'footer.text': 'Placeholder text. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor.',
+    'footer.text': 'Keep your Applications organized.',
     'export.button': 'Export',
 
         'view.label': 'View', 'view.list': 'List', 'view.cards': 'Cards', 'view.map': 'Map',

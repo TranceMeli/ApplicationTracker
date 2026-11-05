@@ -18,6 +18,7 @@
   --planned: #8E9094;
   --unsure: #8F6BC4; --unsure-soft: #EFE9F8; --unsure-ink: #57359A;
   --applied: #2F7BE0; --applied-soft: #E1ECFB; --applied-ink: #1B4E9C;
+  --initiative: #0E9AA7; --initiative-soft: #DDF3F5; --initiative-ink: #0B5F68;
   --offer: #2F8A3E;
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--ink);
 }
@@ -48,6 +49,8 @@ button { font: inherit; font-size: .9rem; padding: .35rem .75rem; border: 1px so
 button:hover { background: var(--tint); }
 button.primary, .filters button.active { background: var(--green); color: var(--surface); }
 button.primary:hover, .filters button.active:hover { background: var(--ink); }
+button.danger { background: var(--danger); border-color: var(--danger); color: var(--surface); }
+button.danger:hover { background: var(--danger-ink); }
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 
 .lang { display: flex; }
@@ -89,6 +92,7 @@ tr.unsure td { font-style: italic; }
 tr.planned td:first-child { box-shadow: inset 4px 0 0 var(--planned); }
 tr.unsure td:first-child { box-shadow: inset 4px 0 0 var(--unsure); }
 tr.applied td:first-child { box-shadow: inset 4px 0 0 var(--applied); }
+tr.initiative td:first-child { box-shadow: inset 4px 0 0 var(--initiative); }
 tr.interview td:first-child { box-shadow: inset 4px 0 0 var(--interview); }
 tr.rejected td { color: var(--mid); }
 tr.rejected td:first-child { box-shadow: inset 4px 0 0 var(--danger); }
@@ -108,6 +112,9 @@ tbody tr:hover td.overdue { background: var(--interview-soft); }
 .dialog label { display: grid; gap: .25rem; font-size: .85rem; color: var(--mid); }
 .dialog .wide, .dialog .buttons { grid-column: 1 / -1; }
 .buttons { display: flex; justify-content: flex-end; gap: .5rem; }
+.overlay.confirm { z-index: 1300; }
+.confirm-dialog { width: min(420px, 100%); grid-template-columns: 1fr; border-top-color: var(--danger); }
+.confirm-dialog p { margin: 0; font-size: 1rem; color: var(--ink); overflow-wrap: anywhere; }
 
 .check { display: flex !important; align-items: center; gap: .5rem; }
 .check input { width: auto; }
@@ -177,6 +184,7 @@ button.link { border: none; background: none; padding: 0; color: var(--green); t
 .card:focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
 .card.unsure { box-shadow: inset 4px 0 0 var(--unsure); }
 .card.applied { box-shadow: inset 4px 0 0 var(--applied); }
+.card.initiative { box-shadow: inset 4px 0 0 var(--initiative); }
 .card.interview { box-shadow: inset 4px 0 0 var(--interview); }
 .card.offer { box-shadow: inset 4px 0 0 var(--offer); }
 .card.rejected { color: var(--mid); box-shadow: inset 4px 0 0 var(--danger); }
@@ -190,6 +198,7 @@ button.link { border: none; background: none; padding: 0; color: var(--green); t
 .badge { align-self: start; font-size: .75rem; font-weight: 600; padding: .1rem .5rem; border: 1px solid var(--planned); background: var(--surface); color: var(--ink); }
 .badge.unsure { background: var(--unsure-soft); border-color: var(--unsure); color: var(--unsure-ink); font-style: italic; }
 .badge.applied { background: var(--applied-soft); border-color: var(--applied); color: var(--applied-ink); }
+.badge.initiative { background: var(--initiative-soft); border-color: var(--initiative); color: var(--initiative-ink); }
 .badge.interview { background: var(--interview-soft); border-color: var(--interview); color: var(--interview-ink); }
 .badge.rejected { background: var(--danger-soft); border-color: var(--danger); color: var(--danger-ink); }
 .badge.offer { background: var(--offer); border-color: var(--offer); color: var(--surface); }
@@ -200,6 +209,7 @@ select.badge option { background: var(--surface); color: var(--ink); font-style:
 .swatch { display: inline-block; width: .6rem; height: .6rem; border-radius: 50%; margin-right: .3rem; border: 1.5px solid var(--planned); background: var(--surface); vertical-align: -1px; }
 .swatch.unsure { background: var(--unsure); border-color: var(--unsure); }
 .swatch.applied { background: var(--applied); border-color: var(--applied); }
+.swatch.initiative { background: var(--initiative); border-color: var(--initiative); }
 .swatch.interview { background: var(--interview); border-color: var(--interview); }
 .swatch.rejected { background: var(--danger); border-color: var(--danger); }
 .swatch.offer { background: var(--offer); border-color: var(--offer); }
@@ -223,6 +233,7 @@ select.badge option { background: var(--surface); color: var(--ink); font-style:
 .logo.large.initials { font-size: 1.1rem; }
 .logo.initials.unsure { background: var(--unsure); }
 .logo.initials.applied { background: var(--applied); }
+.logo.initials.initiative { background: var(--initiative); }
 .logo.initials.interview { background: var(--interview); color: var(--ink); }
 .logo.initials.rejected { background: var(--danger); }
 .logo.initials.offer { background: var(--offer); }

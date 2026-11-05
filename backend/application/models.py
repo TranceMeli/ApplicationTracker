@@ -8,6 +8,7 @@ class Application(models.Model):
         PLANNED = "planned", "Geplant"
         UNSURE = "unsure", "Unsicher"
         APPLIED = "applied", "Beworben"
+        INITIATIVE = "initiative", "Initiativ"
         INTERVIEW = "interview", "Gespräch"
         REJECTED = "rejected", "Absage"
         OFFER = "offer", "Zusage"

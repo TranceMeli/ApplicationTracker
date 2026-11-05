@@ -1,4 +1,5 @@
 <script setup>
+import { vBackdropClose } from '../backdrop'
 import { reactive } from 'vue'
 import { today } from '../constants'
 import { FORM_FIELDS, visibleFormFields } from '../fields'
@@ -24,7 +25,7 @@ function submit() {
 </script>
 
 <template>
-  <div class="overlay" @click.self="$emit('close')">
+  <div class="overlay" v-backdrop-close="() => $emit('close')">
     <form class="dialog" @submit.prevent="submit">
       <h2>{{ item.id ? t('form.edit') : t('form.new') }}</h2>
 

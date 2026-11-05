@@ -1,4 +1,5 @@
 <script setup>
+import { vBackdropClose } from '../backdrop'
 import { TABLE_FIELDS, FORM_FIELDS, settings, resetSettings } from '../fields'
 import { t } from '../i18n'
 import { logosEnabled } from '../logo'
@@ -12,7 +13,7 @@ function toggle(list, key) {
 </script>
 
 <template>
-  <div class="overlay" @click.self="$emit('close')">
+  <div class="overlay" v-backdrop-close="() => $emit('close')">
     <section class="dialog settings">
       <h2>{{ t('settings.title') }}</h2>
       <p class="sub wide">{{ t('settings.hint') }}</p>
