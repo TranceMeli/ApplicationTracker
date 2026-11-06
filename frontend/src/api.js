@@ -1,5 +1,6 @@
 const BASE = '/api/applications/'
 const FILES = '/api/attachments/'
+const EVENTS = '/api/events/'
 
 async function request(url, options = {}) {
   const res = await fetch(url, {
@@ -25,6 +26,16 @@ async function errorMessage(res) {
 export const api = {
   list: (params = {}) => request(`${BASE}?${new URLSearchParams(params)}`),
   stats: () => request(`${BASE}stats/`),
+  companies: () => request(`${BASE}companies/`),
+  // action: 'status' or 'kind' (with the new value), 'delete' (to the trash) or 'restore'
+  bulk: (ids, action, value) =>
+    request(`${BASE}bulk/`, {
+      method: 'POST',
+      body: JSON.stringify({ ids, action, ...(action === 'status' ? { status: value } : {}), ...(action === 'kind' ? { kind: value } : {}) }),
+    }),
+  addNote: (application, text, date) =>
+    request(EVENTS, { method: 'POST', body: JSON.stringify({ application, text, date }) }),
+  removeEvent: (id) => request(`${EVENTS}${id}/`, { method: 'DELETE' }),
   create: (data) => request(BASE, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => request(`${BASE}${id}/`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (id) => request(`${BASE}${id}/`, { method: 'DELETE' }),

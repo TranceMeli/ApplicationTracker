@@ -27,7 +27,7 @@ export function setHome(value) {
   write(HOME_KEY, value)
 }
 
-export const VIEWS = ['list', 'cards', 'map']
+export const VIEWS = ['list', 'cards', 'board', 'map']
 export function loadView() {
   const view = read(VIEW_KEY)
   return VIEWS.includes(view) ? view : 'list'

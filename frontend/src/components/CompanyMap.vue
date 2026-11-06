@@ -19,7 +19,6 @@ const COLORS = {
   planned: '#FFFFFF',
   unsure: '#8F6BC4',
   applied: '#2F7BE0',
-  initiative: '#0E9AA7',
   interview: '#F0A020',
   rejected: '#D6453D',
   offer: '#2F8A3E',

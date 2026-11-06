@@ -3,6 +3,7 @@ import { fmt } from '../constants'
 import { distanceLabel, home } from '../geo'
 import { t } from '../i18n'
 import CompanyLogo from './CompanyLogo.vue'
+import KindBadge from './KindBadge.vue'
 
 defineProps({ items: Array })
 defineEmits(['open', 'favorite'])
@@ -35,7 +36,13 @@ const place = (i) => [i.postal_code, i.city].filter(Boolean).join(' ')
       </div>
 
       <p v-if="i.position" class="card-position">{{ i.position }}</p>
-      <span class="badge" :class="i.status">{{ t(`status.${i.status}`) }}</span>
+      <div v-if="i.tags" class="tags">
+        <span v-for="tag in i.tags.split(', ')" :key="tag" class="tag">{{ tag }}</span>
+      </div>
+      <div class="badges">
+        <span class="badge" :class="i.status">{{ t(`status.${i.status}`) }}</span>
+        <KindBadge :item="i" />
+      </div>
 
       <dl class="card-facts">
         <template v-if="place(i)">

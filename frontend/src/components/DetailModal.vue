@@ -2,11 +2,12 @@
 import { vBackdropClose } from '../backdrop'
 import { computed, ref } from 'vue'
 import { api } from '../api'
-import { KIND_KEYS, fmt } from '../constants'
+import { KIND_KEYS, fmt, today } from '../constants'
 import { visibleFormFields } from '../fields'
 import { t } from '../i18n'
 import { askConfirm } from '../confirm'
 import CompanyLogo from './CompanyLogo.vue'
+import { kindLabel } from '../kind'
 
 const props = defineProps({ item: Object, number: Number })
 const emit = defineEmits(['close', 'edit', 'remove', 'changed'])
@@ -25,6 +26,7 @@ const address = computed(() => {
 function value(f) {
   const v = props.item[f.key]
   if (!v) return '–'
+  if (f.key === 'kind') return kindLabel(props.item)
   if (f.type === 'date') return fmt(v)
   if (f.type === 'select') return t(`${f.optionsPrefix}.${v}`)
   return v
@@ -52,6 +54,44 @@ const rows = computed(() => {
   }
   return out
 })
+
+// History: status changes are written by the server, notes are added here
+const events = computed(() => props.item.events ?? [])
+const noteText = ref('')
+const noteDate = ref(today())
+const noteError = ref('')
+
+const statusName = (key) => (key ? t(`status.${key}`) : '')
+function eventLabel(e) {
+  if (e.kind === 'created') return t('history.created', { status: statusName(e.status) })
+  if (e.kind === 'status') return t('history.status', { status: statusName(e.status) })
+  return e.text
+}
+
+async function addNote() {
+  const text = noteText.value.trim()
+  if (!text) {
+    noteError.value = t('history.needText')
+    return
+  }
+  try {
+    await api.addNote(props.item.id, text, noteDate.value || today())
+    noteText.value = ''
+    noteError.value = ''
+    emit('changed')
+  } catch (err) {
+    noteError.value = err.message
+  }
+}
+
+async function removeNote(e) {
+  try {
+    await api.removeEvent(e.id)
+    emit('changed')
+  } catch (err) {
+    noteError.value = err.message
+  }
+}
 
 // Attachments
 const kind = ref('cover_letter')
@@ -128,6 +168,25 @@ async function removeFile(a) {
         </label>
       </div>
       <p v-if="uploadError" class="error">{{ uploadError }}</p>
+
+      <h3>{{ t('history.title') }}</h3>
+      <ul v-if="events.length" class="timeline">
+        <li v-for="e in events" :key="e.id" :class="e.status || 'note'">
+          <div>
+            <strong v-if="e.kind !== 'note'">{{ eventLabel(e) }}</strong>
+            <span v-else class="pre">{{ e.text }}</span>
+            <span class="sub">{{ fmt(e.date) }}</span>
+          </div>
+          <button v-if="e.kind === 'note'" :aria-label="t('history.remove')" @click="removeNote(e)">×</button>
+        </li>
+      </ul>
+      <p v-else class="sub">{{ t('history.empty') }}</p>
+      <form class="note-form" @submit.prevent="addNote">
+        <input v-model="noteText" type="text" :placeholder="t('history.placeholder')" :aria-label="t('history.placeholder')" @input="noteError = ''" />
+        <input v-model="noteDate" type="date" :aria-label="t('field.date')" />
+        <button type="submit">{{ t('history.add') }}</button>
+      </form>
+      <p v-if="noteError" class="error">{{ noteError }}</p>
 
       <div class="buttons">
         <button @click="$emit('remove', item)">{{ t('btn.delete') }}</button>

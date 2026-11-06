@@ -26,22 +26,32 @@ This project is under active development. Features and the data model may still 
 ## Features
 
 - Track applications with company, position, contact person, dates, status, notes and more
-- Status workflow: planned, unsure, applied, initiative (unsolicited application), interview, rejected, offer
+- Status workflow: planned, unsure, applied, interview, rejected, offer
+- Type per application, chosen from a menu in addition to the status and empty until set: "Stelle" (answer to a job posting, rose) or "Initiativ" (unsolicited, teal). Together with the status this gives combinations such as Planned - Initiativ or Applied - Stelle; there are filter chips for each type and for applications without one, a column in the table, a badge on the cards and the board, and a bulk change
 - Favorites with a star marker and a favorites filter
 - Live search (company, position, contact person, email, phone, city, notes) and status filter with counters
 - Status colors that are the same in the table, on the cards and on the map
 - Consecutive numbering of the applications in the table and detail view
 - Detail view in a modal dialog
-- Highlighting of overdue follow-ups (applications with status applied whose follow-up date has passed)
+- Follow-up reminders: a banner lists the applications whose follow-up date has come (status applied) and narrows the list to them with one click, overdue dates are highlighted in the table
+- Sortable table columns (click a column header; the numbering stays with the application) and an optional grouping by company, a badge shows when a company has several applications
+- Select several applications to change their status or delete them at once
+- Deleting moves an application to a trash for 7 days, a message offers "Undo"; older entries are purged for good together with their files
+- History per application: status changes are logged automatically, notes with a date can be added in the detail view
+- Tags per application (comma separated, shown as chips, filter above the list); a warning appears in the form when the company already exists
 - Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view. Hidden fields are not deleted, their data stays stored and can be shown again at any time
 - Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
 - Document attachments per application (cover letter, CV, certificate, other)
-- List, card and map views for applications
+- List, card, board and map views for applications; the board shows one column per status and moves an application when its card is dragged to another column
+- Statistics page: response rate, average days to an answer, applications per week and the way from application to offer
+- Calendar export (.ics) of follow-up dates and interview dates
+- Dark mode that follows the system setting and can be switched in the header; responsive layout with a floating add button on small screens
 - Optional home address stored in the browser, with approximate distances to application locations
 - Address lookup through OpenStreetMap Nominatim; coordinates and lookup status are saved with applications
 - Optional company logos in the table, on the cards and in the detail view (off by default, switch on under Fields); the initials in the status color are shown when a company has no icon
 - Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview and a choice to update existing applications or import only new companies
 - CSV export of all applications with every field (also the hidden ones), in the same format as the import template, so an export can be imported again
+- Backups: a download of the database and the uploaded files from the header, and an automatic backup once a day when the server starts (the last 14 are kept in `backend/backups/`)
 - Header with navigation and a footer that stays at the bottom of the window
 - German and English interface with a language switch, the choice is remembered in the browser
 
@@ -111,6 +121,7 @@ application-tracker/
 │       ├── importer.py         File readers and company list import
 │       ├── geocoding.py        Address lookup with OpenStreetMap Nominatim
 │       ├── logos.py            Company icons from DuckDuckGo, cached in media/logos/
+│       ├── backup.py           Zip backups of the database and the uploaded files
 │       ├── urls.py             API routes
 │       ├── admin.py            Admin with attachments as inline
 │       └── tests.py            API, attachment and import tests
@@ -124,6 +135,12 @@ application-tracker/
         ├── constants.js        Status keys and date helpers
         ├── geo.js              Map state, geocoding and distance helpers
         ├── logo.js             Company domain, initials and logo setting
+        ├── status.js           Status keys, open and sent statuses
+        ├── theme.js            Light and dark theme
+        ├── toast.js            Short messages with an undo action
+        ├── calendar.js         iCalendar (.ics) export
+        ├── confirm.js          Confirmation dialog instead of window.confirm
+        ├── backdrop.js         Closes dialogs only on a real click on the backdrop
         ├── fields.js           Field catalog and visibility settings
         ├── exporter.js         CSV export and import template download
         ├── i18n.js             German and English texts
@@ -138,6 +155,11 @@ application-tracker/
             ├── LanguageSwitch.vue
             ├── CompanyCards.vue
             ├── CompanyLogo.vue
+            ├── ApplicationBoard.vue
+            ├── StatsPage.vue
+            ├── BulkBar.vue
+            ├── ToastBar.vue
+            ├── ConfirmDialog.vue
             ├── CompanyMap.vue
             └── GeoBar.vue
 ```
@@ -200,23 +222,35 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 
 - **Navigation:** the header gives access to the list, the import, the export and the field settings. The application name and the Applications entry reset search and filters.
 - **New application:** use the button in the header. Only the company is required.
-- **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (blue), initiative (teal), interview (amber), rejected (red, name crossed out) and offer (green). The colors are defined as CSS variables at the top of `frontend/src/style.css`.
+- **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (blue), interview (amber), rejected (red, name crossed out) and offer (green). The type is shown as a small badge with its own color. The colors are defined as CSS variables at the top of `frontend/src/style.css`.
 - **Favorites:** click the star in the table. The favorites button filters the list.
 - **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
 - **Fields:** the Fields entry lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
 - **Documents:** open an application, pick a type and attach files. Allowed types are PDF, Word, ODT, TXT, PNG and JPG, up to 10 MB per file.
 - **Import:** open Import, download the template if needed, choose a file and review the dry-run preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized; unknown columns are shown as ignored. Choose whether to add new companies and update existing applications or import new companies only. Existing companies are matched case-insensitively after whitespace normalization. In update mode, non-empty imported values update the oldest matching application; empty cells do not erase saved data. Repeated companies in the same file are counted as duplicates.
 - **Export:** the Export entry downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
-- **Views and locations:** switch between list, cards and map. In cards or map view, you can optionally enter your home address to see distances; it is stored only in this browser. Use the location lookup to geocode application addresses. Addresses are sent to OpenStreetMap Nominatim, and coordinates and lookup status are saved with the application. Requests are rate-limited; a batch may take several seconds. Applications without a match can be retried.
+- **Reminders, sorting and grouping:** the banner above the list names the follow-ups that are due; Show narrows the list to them. Click a column header to sort (again for descending, a third time to reset). Group by company puts applications of the same company together under a header.
+- **Type:** the Art menu in the form starts empty; choose Stelle or Initiativ when it applies. The type is a badge in the list, on the cards and on the board (nothing is shown while it is empty). Next to the status chips there is a chip for each type and one for Ohne Art, so Planned plus Initiativ can be combined, or all applications that still need a type can be listed. In the bulk bar, pick a type or Art entfernen for the selected applications. Types that are stored in the data in other words (for example from an import) stay selectable and get their own color.
+- **Several at once:** tick the boxes in the first column; a bar offers a status change, a type, Delete and Clear selection. Every delete can be undone from the message that appears at the bottom.
+- **History and tags:** the detail view shows the history with the status changes and lets you add notes. Tags are entered comma separated in the form and can be used as a filter.
+- **Board:** drag a card to another column to change the status, or use the status menu on the card.
+- **Statistics, calendar, backup:** the Statistics entry shows the numbers and charts, Calendar downloads an .ics file with follow-ups and interviews, Backup downloads a zip with the database and the uploaded files.
+- **Dark mode:** the moon or sun button in the header switches the theme; without a choice the system setting is used.
+- **Views and locations:** switch between list, cards, board and map. In cards or map view, you can optionally enter your home address to see distances; it is stored only in this browser. Use the location lookup to geocode application addresses. Addresses are sent to OpenStreetMap Nominatim, and coordinates and lookup status are saved with the application. Requests are rate-limited; a batch may take several seconds. Applications without a match can be retried.
 - **Language:** switch between DE and EN in the header.
 
 ## API
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET, POST | `/api/applications/` | List (`?search=`, `?status=`, `?channel=`, `?work_mode=`, `?favorite=1`, `?ordering=`) and create |
-| GET, PATCH, DELETE | `/api/applications/<id>/` | Read, update and delete one application; deleting also removes its files |
-| GET | `/api/applications/stats/` | Number of applications per status |
+| GET, POST | `/api/applications/` | List (`?search=`, `?status=`, `?kind=` (`posting`, `initiative`, another stored type or `__none__` for no type), `?channel=`, `?work_mode=`, `?favorite=1`, `?ordering=`) and create |
+| GET, PATCH, DELETE | `/api/applications/<id>/` | Read, update and delete one application; deleting moves it to the trash, it is purged with its files after 7 days (`?tag=` filters by tag) |
+| GET | `/api/applications/stats/` | Number of applications per status and per type, the follow-ups that are due and the tags with their counts |
+| GET | `/api/applications/companies/` | Id and name of every application |
+| POST | `/api/applications/bulk/` | Several applications at once: `{"ids": [...], "action": "status" \| "kind" \| "delete" \| "restore", "status": "...", "kind": "..."}` |
+| GET, POST | `/api/events/` | History entries (`?application=<id>`); POST adds a note (`application`, `text`, `date`) |
+| DELETE | `/api/events/<id>/` | Remove a note (entries written by the app cannot be removed) |
+| GET | `/api/backup/` | Zip with the database and the uploaded files |
 | POST | `/api/applications/import/` | Preview or import a company list (multipart: `file`, optional `dry_run`, `default_status`, `mode`) |
 | POST | `/api/applications/geocode/` | Geocode a batch of application addresses; send `{"retry":"1"}` to retry failed lookups |
 | POST | `/api/geocode/` | Look up one address without saving it on the server |
@@ -243,5 +277,5 @@ The table, form, detail view, field settings dialog and the CSV export pick it u
 ## Notes
 
 - The app has no authentication and is meant for local use. Uploaded documents are served without login. Session authentication is switched off for the API, so a login to the Django admin does not cause CSRF errors in the app. Add authentication and configure production settings (including `DEBUG`, `SECRET_KEY` and `ALLOWED_HOSTS`) before exposing it to a network.
-- A backup consists of `backend/db.sqlite3` and the folder `backend/media/`.
+- A backup consists of `backend/db.sqlite3` and the folder `backend/media/`. The Backup entry in the header and `python manage.py backup` create a zip with both; `runserver` also creates one once a day in `backend/backups/`.
 - The `.gitignore` excludes the virtual environment, `node_modules`, the build output, the SQLite database, the media folder, `.env` files and local editor and Claude Code settings, so personal data stays out of the repository.

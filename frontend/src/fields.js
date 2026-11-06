@@ -24,8 +24,10 @@ export const FIELDS = [
   { key: 'street', label: 'field.street', type: 'text', wide: true, autocomplete: 'street-address' },
   { key: 'postal_code', label: 'field.postalCode', type: 'text', inputmode: 'numeric', maxlength: 10, autocomplete: 'postal-code' },
   { key: 'city', label: 'field.city', type: 'text', autocomplete: 'address-level2', tableable: true },
-  { key: 'status', label: 'field.status', type: 'select', options: STATUS_KEYS, optionsPrefix: 'status', locked: true, tableable: true, defaultTable: true },
+  { key: 'status', label: 'field.status', type: 'select', options: STATUS_KEYS, optionsPrefix: 'status', noEmpty: true, locked: true, tableable: true, defaultTable: true },
+  { key: 'kind', label: 'field.kind', type: 'text', tableable: true, defaultTable: true },
   { key: 'link', label: 'field.link', type: 'url', wide: true, tableable: true },
+  { key: 'tags', label: 'field.tags', type: 'text', wide: true, placeholder: 'field.tagsHint' },
   { key: 'rejection_reason', label: 'field.rejectionReason', type: 'textarea', wide: true },
   { key: 'notes', label: 'field.notes', type: 'textarea', wide: true },
 ]
@@ -35,12 +37,26 @@ const KEY = 'fieldSettings'
 const defaults = () => ({
   table: FIELDS.filter((f) => f.defaultTable).map((f) => f.key),
   form: FIELDS.filter((f) => f.formable !== false).map((f) => f.key),
+  seen: FIELDS.map((f) => f.key),
 })
+
+// Fields added in a later version of the app are switched on once (in the form and, if they
+// are a default column, in the table). Fields that were already known keep the user's choice.
+const FIELDS_ADDED_LATER = ['tags', 'kind']
 
 function load() {
   try {
     const s = JSON.parse(localStorage.getItem(KEY))
-    if (Array.isArray(s?.table) && Array.isArray(s?.form)) return s
+    if (Array.isArray(s?.table) && Array.isArray(s?.form)) {
+      const seen = Array.isArray(s.seen)
+        ? s.seen
+        : FIELDS.map((f) => f.key).filter((key) => !FIELDS_ADDED_LATER.includes(key))
+      for (const f of FIELDS.filter((f) => !seen.includes(f.key))) {
+        if (f.formable !== false) s.form.push(f.key)
+        if (f.defaultTable) s.table.push(f.key)
+      }
+      return { ...s, seen: FIELDS.map((f) => f.key) }
+    }
   } catch {}
   return defaults()
 }

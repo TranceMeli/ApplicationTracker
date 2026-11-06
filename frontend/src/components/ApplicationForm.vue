@@ -1,11 +1,17 @@
 <script setup>
 import { vBackdropClose } from '../backdrop'
-import { reactive } from 'vue'
+import { computed, reactive } from 'vue'
 import { today } from '../constants'
 import { FORM_FIELDS, visibleFormFields } from '../fields'
 import { t } from '../i18n'
+import { kindName } from '../kind'
 
-const props = defineProps({ item: Object, error: String }) // item {} = new application
+const props = defineProps({
+  item: Object,
+  error: String,
+  companies: { type: Array, default: () => [] },
+  kinds: { type: Array, default: () => [] }, // types in use, offered as suggestions
+}) // item {} = new application
 const emit = defineEmits(['save', 'close'])
 
 const KEYS = [...FORM_FIELDS.map((f) => f.key), 'is_favorite']
@@ -16,6 +22,16 @@ const defaults = { date: today(), status: 'applied', is_favorite: false }
 const form = reactive(
   Object.fromEntries(KEYS.map((key) => [key, props.item[key] ?? (props.item.id ? '' : defaults[key] ?? '')])),
 )
+
+// The type is chosen from a menu that starts empty: the built-in types and the ones already in use.
+const kindOptions = computed(() => [...new Set([...props.kinds, ...(form.kind ? [form.kind] : [])])])
+
+// Warns while typing when the company already exists (it can still be saved).
+const normalize = (name) => (name || '').replace(/\s+/g, ' ').trim().toLowerCase()
+const duplicates = computed(() => {
+  const key = normalize(form.company)
+  return key ? props.companies.filter((c) => c.id !== props.item.id && normalize(c.company) === key) : []
+})
 
 function submit() {
   const data = { ...form }
@@ -31,8 +47,12 @@ function submit() {
 
       <label v-for="f in visibleFormFields" :key="f.key" :class="{ wide: f.wide }">
         {{ t(f.label) }}
-        <select v-if="f.type === 'select'" v-model="form[f.key]">
-          <option v-if="f.key !== 'status'" value="">–</option>
+        <select v-if="f.key === 'kind'" v-model="form.kind">
+          <option value="">–</option>
+          <option v-for="k in kindOptions" :key="k" :value="k">{{ kindName(k) }}</option>
+        </select>
+        <select v-else-if="f.type === 'select'" v-model="form[f.key]">
+          <option v-if="!f.noEmpty" value="">–</option>
           <option v-for="o in f.options" :key="o" :value="o">{{ t(`${f.optionsPrefix}.${o}`) }}</option>
         </select>
         <textarea v-else-if="f.type === 'textarea'" v-model="form[f.key]" rows="3" />
@@ -40,11 +60,15 @@ function submit() {
           v-else
           v-model="form[f.key]"
           :type="f.type"
+          :placeholder="f.placeholder ? t(f.placeholder) : undefined"
           :required="f.required"
           :autocomplete="f.autocomplete"
           :inputmode="f.inputmode"
           :maxlength="f.maxlength"
         />
+        <small v-if="f.key === 'company' && duplicates.length" class="notice">
+          {{ t('form.duplicate', { name: duplicates[0].company, n: duplicates[0].id }) }}
+        </small>
       </label>
 
       <label class="wide check"><input v-model="form.is_favorite" type="checkbox" /> {{ t('field.favoriteMark') }}</label>
