@@ -53,6 +53,7 @@ class Application(models.Model):
     tags = models.CharField(max_length=300, blank=True)  # comma separated, e.g. "Remote, Wunschfirma"
     # Deleting only fills this in. The entry stays restorable for a while and is purged later.
     deleted_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)  # empty for entries that were not saved since this field exists
     source = models.CharField(max_length=150, blank=True)
     channel = models.CharField(max_length=20, choices=Channel.choices, blank=True)
     work_mode = models.CharField(max_length=20, choices=WorkMode.choices, blank=True)

@@ -2,14 +2,14 @@
 import { computed } from 'vue'
 import { domainOf, failedDomains, initials, logoUrl, logosEnabled } from '../logo'
 
-const props = defineProps({ item: Object, large: Boolean })
+const props = defineProps({ item: Object, large: Boolean, always: Boolean }) // always: also when logos are switched off, then as initials
 
 const domain = computed(() => domainOf(props.item))
-const showImage = computed(() => domain.value && !failedDomains.has(domain.value))
+const showImage = computed(() => logosEnabled.value && domain.value && !failedDomains.has(domain.value))
 </script>
 
 <template>
-  <span v-if="logosEnabled" class="logo" :class="[large ? 'large' : '', showImage ? '' : `initials ${item.status}`]" aria-hidden="true">
+  <span v-if="logosEnabled || always" class="logo" :class="[large ? 'large' : '', showImage ? '' : `initials ${item.status}`]" aria-hidden="true">
     <img
       v-if="showImage"
       :src="logoUrl(domain)"

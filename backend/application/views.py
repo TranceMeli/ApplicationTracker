@@ -119,7 +119,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             if not isinstance(kind, str) or len(normalize_kind(kind)) > Application._meta.get_field("kind").max_length:
                 return Response({"code": "invalid_kind"}, status=400)
             kind = normalize_kind(kind)
-            changed = Application.objects.filter(id__in=ids).update(kind=kind)
+            changed = Application.objects.filter(id__in=ids).update(kind=kind, updated_at=timezone.now())
         elif action_name == "status":
             status = request.data.get("status")
             if status not in Application.Status.values:

@@ -412,3 +412,21 @@ class KindTests(TestCase):
     def test_import_update_changes_the_type(self):
         run_import(SimpleUploadedFile("l.csv", "Firma;Typ\nBeta;Initiativ\n".encode("utf-8")))
         self.assertEqual(Application.objects.get(company="Beta").kind, "initiative")
+
+
+class UpdatedAtTests(TestCase):
+    def test_the_change_date_follows_every_save_and_cannot_be_set_by_hand(self):
+        client = APIClient()
+        created = client.post("/api/applications/", {"company": "Alpha"}, format="json").json()
+        self.assertIsNotNone(created["updated_at"])
+        Application.objects.filter(id=created["id"]).update(updated_at=None)
+        patched = client.patch(f"/api/applications/{created['id']}/", {"city": "Berlin", "updated_at": "2000-01-01T00:00:00Z"}, format="json").json()
+        self.assertIsNotNone(patched["updated_at"])
+        self.assertFalse(patched["updated_at"].startswith("2000"))
+
+    def test_bulk_type_change_updates_the_date(self):
+        client = APIClient()
+        application = Application.objects.create(company="Alpha")
+        Application.objects.filter(id=application.id).update(updated_at=None)
+        client.post("/api/applications/bulk/", {"ids": [application.id], "action": "kind", "kind": "Stelle"}, format="json")
+        self.assertIsNotNone(Application.objects.get(id=application.id).updated_at)

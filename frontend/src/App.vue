@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, defineAsyncComponent } from 'vue'
 import { api } from './api'
+import { today } from './constants'
 import { t } from './i18n'
 import { askConfirm, confirmState } from './confirm'
 import { downloadApplications, downloadCalendar } from './exporter'
@@ -63,7 +64,9 @@ const year = new Date().getFullYear()
 const total = computed(() => stats.value.total ?? 0)
 const kindKeys = computed(() => knownKinds(stats.value.by_kind).map((k) => k.key))
 const due = computed(() => stats.value.due ?? [])
-const detail = computed(() => items.value.find((i) => i.id === detailId.value) || null)
+const detail = computed(
+  () => items.value.find((i) => i.id === detailId.value) || (pinned.value?.id === detailId.value ? pinned.value : null),
+)
 const error = computed(() => (backendDown.value ? t('app.backendDown') : errorText.value))
 
 // Oldest first, so the numbers run 1, 2, 3 ... in the order the entries were created.
@@ -76,6 +79,13 @@ const visibleItems = computed(() => {
   const ids = new Set(due.value.map((d) => d.id))
   return sortedItems.value.filter((i) => ids.has(i.id))
 })
+
+const detailIndex = computed(() => visibleItems.value.findIndex((i) => i.id === detailId.value))
+
+function stepDetail(step) {
+  const target = visibleItems.value[detailIndex.value + step]
+  if (target) detailId.value = target.id
+}
 
 // Only the newest request may update the list, a slower older one is dropped.
 let loadId = 0
@@ -105,9 +115,9 @@ async function load() {
 
 async function mutate(operation) {
   try {
-    await operation()
+    const result = await operation()
     await load()
-    return true
+    return result ?? true
   } catch (e) {
     backendDown.value = false
     errorText.value = e.message
@@ -120,12 +130,26 @@ async function save(id, data) {
   if (saved) closeForm()
 }
 
-async function changeStatus(item, status) {
-  await mutate(() => api.update(item.id, { status }))
+// The detail view can change an application so that it drops out of the filtered list (a new status, for example).
+// The updated copy is kept, so the dialog does not close under the user's hands.
+const pinned = ref(null)
+
+async function updateItem(item, patch) {
+  const updated = await mutate(() => api.update(item.id, patch))
+  if (updated && updated !== true && item.id === detailId.value) pinned.value = updated
+  return updated
 }
 
-async function toggleFavorite(item) {
-  await mutate(() => api.update(item.id, { is_favorite: !item.is_favorite }))
+const changeStatus = (item, status) => updateItem(item, { status })
+const changeKind = (item, kind) => updateItem(item, { kind })
+const toggleFavorite = (item) => updateItem(item, { is_favorite: !item.is_favorite })
+
+// A copy of an application (another position at the same company) starts in the full form.
+const COPIED = ['company', 'position', 'street', 'postal_code', 'city', 'contact_person', 'email', 'phone', 'link', 'source', 'channel', 'work_mode', 'salary', 'tags', 'kind']
+function duplicate(item) {
+  const copy = Object.fromEntries(COPIED.map((key) => [key, item[key] ?? '']))
+  detailId.value = null
+  openForm({ ...copy, status: 'planned', date: today() })
 }
 
 // Deleting only moves entries to the trash, so the toast can offer "Undo".
@@ -404,10 +428,20 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
       v-if="detail"
       :item="detail"
       :number="detailNumber"
+      :index="detailIndex"
+      :count="visibleItems.length"
+      :kinds="kindKeys"
       @close="detailId = null"
       @edit="editFromDetail"
       @remove="remove"
       @changed="load"
+      @status="changeStatus"
+      @kind="changeKind"
+      @update="updateItem"
+      @favorite="toggleFavorite"
+      @prev="stepDetail(-1)"
+      @next="stepDetail(1)"
+      @duplicate="duplicate"
     />
     <QuickAddDialog
       v-if="quickAdd"
