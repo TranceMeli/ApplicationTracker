@@ -11,6 +11,8 @@ import socket
 from django.conf import settings
 from django.contrib.staticfiles.management.commands.runserver import Command as RunserverCommand
 
+from application.backup import backup_if_due
+
 START_PORT = 8000
 LAST_PORT = 8100
 ENV_PORT = "TRACKER_RUNSERVER_PORT"  # the autoreloader's child process reuses the parent's choice
@@ -42,4 +44,12 @@ class Command(RunserverCommand):
             if not os.environ.get("RUN_MAIN"):
                 PORT_FILE.write_text(port)
                 atexit.register(PORT_FILE.unlink, missing_ok=True)
+        # Once a day the data is backed up. Only the process that really serves requests does it.
+        if os.environ.get("RUN_MAIN") or not options.get("use_reloader", True):
+            try:
+                created = backup_if_due()
+                if created:
+                    self.stdout.write(f"Backup written to {created}")
+            except Exception as exc:  # a failed backup must never keep the server from starting
+                self.stderr.write(f"Backup failed: {exc}")
         super().handle(*args, **options)

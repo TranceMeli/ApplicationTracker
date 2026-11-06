@@ -9,7 +9,8 @@ from xml.etree import ElementTree as ET
 
 from django.db import transaction
 
-from .models import Application
+from .models import Application, ApplicationEvent
+from .serializers import clean_tags, normalize_kind
 
 PREVIEW_ROWS = 5
 SUPPORTED_EXTENSIONS = (".csv", ".tsv", ".txt", ".xlsx", ".xlsm", ".ods", ".json")
@@ -42,19 +43,20 @@ FIELD_ALIASES = {
     "rejection_reason": ["rejection reason", "absagegrund", "grund der absage"],
     "notes": ["notes", "notizen", "bemerkung", "bemerkungen", "kommentar", "kommentare"],
     "favorite": ["favorite", "favorit", "favoriten", "stern"],
+    "tags": ["tags", "tag", "schlagwörter", "schlagwoerter", "schlagworte", "labels"],
+    "kind": ["type", "application type", "kind", "art", "typ"],
 }
 ALIAS_LOOKUP = {alias: key for key, aliases in FIELD_ALIASES.items() for alias in aliases}
 COMPANY_ALIASES = set(FIELD_ALIASES["company"])
 
 DATE_FIELDS = ("date", "follow_up", "interview_date", "response_date")
 TEXT_FIELDS = ("company", "position", "contact_person", "email", "phone", "link", "street",
-               "postal_code", "city", "source", "salary", "rejection_reason", "notes")
+               "postal_code", "city", "source", "salary", "rejection_reason", "notes", "tags")
 
 STATUS_LABELS = {
     "planned": "planned", "geplant": "planned",
     "unsure": "unsure", "unsicher": "unsure",
     "applied": "applied", "beworben": "applied",
-    "initiative": "initiative", "initiativ": "initiative", "initiativbewerbung": "initiative",
     "interview": "interview", "gespräch": "interview", "gespraech": "interview",
     "rejected": "rejected", "absage": "rejected",
     "offer": "offer", "zusage": "offer",
@@ -71,6 +73,8 @@ WORK_MODE_LABELS = {
     "hybrid": "hybrid",
     "remote": "remote",
 }
+
+INITIATIVE_WORDS = {"initiativ", "initiative", "initiativbewerbung", "unsolicited", "speculative"}
 
 FAVORITE_VALUES = {"ja", "yes", "true", "wahr", "1", "x", "y", "j", "★"}
 
@@ -295,6 +299,14 @@ def split_company_cell(text):
     return parts
 
 
+def row_kind(row, columns):
+    """The application type from the type column (any text); the old status word "Initiativ" also counts."""
+    kind = normalize_kind(as_text(get(row, columns, "kind")))
+    if kind:
+        return kind[:40]
+    return "initiative" if as_text(get(row, columns, "status")).lower() in INITIATIVE_WORDS else None
+
+
 def get(row, columns, key):
     idx = columns.get(key)
     return row[idx] if idx is not None and idx < len(row) else None
@@ -361,6 +373,7 @@ def run_import(upload, dry_run=False, default_status="planned", update_existing=
             continue
         seen.add(identity)
 
+        data["tags"] = clean_tags(data["tags"])
         data["email"] = re.sub(r"^mailto:", "", data["email"], flags=re.IGNORECASE)
         data["phone"] = re.sub(r"^tel:", "", data["phone"], flags=re.IGNORECASE)
         if data["email"] and "@" not in data["email"]:
@@ -399,6 +412,9 @@ def run_import(upload, dry_run=False, default_status="planned", update_existing=
                 label = labels.get(as_text(get(row, columns, key)).lower())
                 if label:
                     values[key] = label
+            kind = row_kind(row, columns)
+            if kind:
+                values["kind"] = kind
             favorite = as_text(get(row, columns, "favorite")).lower()
             if favorite:
                 values["is_favorite"] = favorite in FAVORITE_VALUES
@@ -419,6 +435,7 @@ def run_import(upload, dry_run=False, default_status="planned", update_existing=
             channel=CHANNEL_LABELS.get(as_text(get(row, columns, "channel")).lower(), ""),
             work_mode=WORK_MODE_LABELS.get(as_text(get(row, columns, "work_mode")).lower(), ""),
             is_favorite=as_text(get(row, columns, "favorite")).lower() in FAVORITE_VALUES,
+            kind=row_kind(row, columns) or "",
         ))
         if len(preview) < PREVIEW_ROWS:
             preview.append({"company": data["company"], "position": data["position"], "city": data["city"]})
@@ -426,7 +443,10 @@ def run_import(upload, dry_run=False, default_status="planned", update_existing=
     if not dry_run:
         with transaction.atomic():
             if to_create:
-                Application.objects.bulk_create(to_create)
+                created = Application.objects.bulk_create(to_create)
+                ApplicationEvent.objects.bulk_create([
+                    ApplicationEvent(application=a, kind=ApplicationEvent.Kind.CREATED, status=a.status) for a in created
+                ])
             for application, changes in to_update:
                 for key, value in changes.items():
                     setattr(application, key, value)
