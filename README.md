@@ -10,11 +10,20 @@
 ## Preview
 
 <p align="center">
-  <img src="frontend/src/assets/screenshot/preview-list.jpg" alt="Listenansicht mit Statusfarben" width="48%">
-  <img src="frontend/src/assets/screenshot/preview-cards.jpg" alt="Kartenansicht mit Entfernungen zum eigenen Standort" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-list.jpg" alt="Listenansicht mit Filter, Statusfarben und Art" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-detail.jpg" alt="Detailansicht mit Statusleiste, Reitern und Abschnitten" width="48%">
 </p>
 <p align="center">
-  <img src="frontend/src/assets/screenshot/preview-map.jpg" alt="Kartenansicht mit Standorten der Bewerbungen" width="85%">
+  <img src="frontend/src/assets/screenshot/preview-board.jpg" alt="Board mit einer Spalte pro Status" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-stats.jpg" alt="Statistik mit Antwortquote und Verlauf" width="48%">
+</p>
+<p align="center">
+  <img src="frontend/src/assets/screenshot/preview-cards.jpg" alt="Kartenansicht mit Entfernungen zum eigenen Standort" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-map.jpg" alt="Kartenansicht mit Standorten der Bewerbungen" width="48%">
+</p>
+<p align="center">
+  <img src="frontend/src/assets/screenshot/preview-dark.jpg" alt="Dunkles Design mit geöffnetem Filter-Menü" width="62%">
+  <img src="frontend/src/assets/screenshot/preview-mobile.jpg" alt="Detailansicht auf dem Handy" width="21%">
 </p>
 
 The screenshots show fictitious demo data; companies, people and addresses are made up.
@@ -32,14 +41,14 @@ This project is under active development. Features and the data model may still 
 - Compact toolbar: live search (company, position, contact person, email, phone, city, notes; the slash key jumps to it), status segments with counters and a Filter menu for the type, tags, favorites, due follow-ups and grouping; the active filters stay visible as chips that can be removed one by one
 - Status colors that are the same in the table, on the cards and on the map
 - Consecutive numbering of the applications in the table and detail view
-- Detail view in a modal dialog
+- Detail view with the status, type and next date in the header, quick actions (mail, call, open the posting), a bar that shows the way from planned to offer, tabs for the overview, the history and the documents, the fields in sections and arrows to go through the applications; a field is changed by clicking it
 - Follow-up reminders: a banner lists the applications whose follow-up date has come (status applied) and narrows the list to them with one click, overdue dates are highlighted in the table
 - Sortable table columns (click a column header; the numbering stays with the application) and an optional grouping by company, a badge shows when a company has several applications
 - Select several applications to change their status or delete them at once
 - Deleting moves an application to a trash for 7 days, a message offers "Undo"; older entries are purged for good together with their files
 - History per application: status changes are logged automatically, notes with a date can be added in the detail view
 - Tags per application (comma separated, shown as chips, filter above the list); a warning appears in the form when the company already exists
-- Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view. Hidden fields are not deleted, their data stays stored and can be shown again at any time
+- Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view, and arrange the fields of the detail view in sections (reorder them, move fields between them, add sections of your own). Hidden fields are not deleted, their data stays stored and can be shown again at any time
 - Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
 - Document attachments per application (cover letter, CV, certificate, other)
 - List, card, board and map views for applications; the board shows one column per status and moves an application when its card is dragged to another column
@@ -220,12 +229,12 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 
 ## Usage
 
-- **Navigation:** the header has the Applications and Statistics pages, the Data menu with Import, Export as CSV, Calendar (.ics) and Backup, the button for a new application, and the gear menu with Choose fields, the theme and the language. The application name and the Applications entry reset search and filters.
+- **Navigation:** the header has the Applications and Statistics pages, the Data menu with Import, Export as CSV, Calendar (.ics) and Backup, the button for a new application, and the gear menu with Manage fields, the theme and the language. The application name and the Applications entry reset search and filters.
 - **New application:** the button in the header (or the plus button on small screens) opens a small dialog. Paste the link to the job posting and the company is read from it, with its logo when logos are switched on; job boards such as LinkedIn or StepStone are not mistaken for the company. Add the position, choose Planned or Applied and a type, and press Add. Show all fields continues in the full form with everything entered so far. Only the company is required, and a warning appears when it already exists.
 - **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (blue), interview (amber), rejected (red, name crossed out) and offer (green). The type is shown as a small badge with its own color. The colors are defined as CSS variables at the top of `frontend/src/style.css`.
 - **Favorites:** click the star in the table. The favorites button filters the list.
-- **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
-- **Fields:** Choose fields in the gear menu lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
+- **Details:** click a row to open the detail view. The header has the status and type menus (change them without leaving the view), the next date and quick actions; the bar below shows how far the application has come. The Overview tab groups the fields in sections and shows only what is filled in, empty fields are offered as "+ field" at the bottom. Click a value or its pencil to change it in place (Enter saves, Escape cancels); the address is one entry with three inputs. History and Documents are tabs of their own, and the tab you used last is remembered. The arrows in the header, the left and right arrow keys and the letters J and K go to the next or previous application of the list. Duplicate copies an application into the form, for example for a second position at the same company.
+- **Fields:** Manage fields in the gear menu has the sections of the detail view on the left and the fields of the selected section on the right. For each field, switch it on or off for the form and detail view and for the table, move it to another section and change its position; sections can be reordered, and sections of your own can be added, renamed and deleted (their fields return to the default sections). Fields without a section (company, position, status, type, number) are always in the header. Hide empty fields turns the "+ field" display on or off. New fields of a later version appear in their section automatically. The company and the status are always shown, and the choices are stored in the browser.
 - **Documents:** open an application, pick a type and attach files. Allowed types are PDF, Word, ODT, TXT, PNG and JPG, up to 10 MB per file.
 - **Import:** open Import, download the template if needed, choose a file and review the dry-run preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized; unknown columns are shown as ignored. Choose whether to add new companies and update existing applications or import new companies only. Existing companies are matched case-insensitively after whitespace normalization. In update mode, non-empty imported values update the oldest matching application; empty cells do not erase saved data. Repeated companies in the same file are counted as duplicates.
 - **Export:** Export as CSV in the Data menu downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
