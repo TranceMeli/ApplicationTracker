@@ -29,7 +29,7 @@ This project is under active development. Features and the data model may still 
 - Status workflow: planned, unsure, applied, interview, rejected, offer
 - Type per application, chosen from a menu in addition to the status and empty until set: "Stelle" (answer to a job posting, rose) or "Initiativ" (unsolicited, teal). Together with the status this gives combinations such as Planned - Initiativ or Applied - Stelle; there are filter chips for each type and for applications without one, a column in the table, a badge on the cards and the board, and a bulk change
 - Favorites with a star marker and a favorites filter
-- Live search (company, position, contact person, email, phone, city, notes) and status filter with counters
+- Compact toolbar: live search (company, position, contact person, email, phone, city, notes; the slash key jumps to it), status segments with counters and a Filter menu for the type, tags, favorites, due follow-ups and grouping; the active filters stay visible as chips that can be removed one by one
 - Status colors that are the same in the table, on the cards and on the map
 - Consecutive numbering of the applications in the table and detail view
 - Detail view in a modal dialog
@@ -45,14 +45,14 @@ This project is under active development. Features and the data model may still 
 - List, card, board and map views for applications; the board shows one column per status and moves an application when its card is dragged to another column
 - Statistics page: response rate, average days to an answer, applications per week and the way from application to offer
 - Calendar export (.ics) of follow-up dates and interview dates
-- Dark mode that follows the system setting and can be switched in the header; responsive layout with a floating add button on small screens
+- Dark mode that follows the system setting and can be chosen in the settings menu (System, Light, Dark) or switched with the moon or sun button; responsive layout with a floating add button on small screens
 - Optional home address stored in the browser, with approximate distances to application locations
 - Address lookup through OpenStreetMap Nominatim; coordinates and lookup status are saved with applications
 - Optional company logos in the table, on the cards and in the detail view (off by default, switch on under Fields); the initials in the status color are shown when a company has no icon
 - Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview and a choice to update existing applications or import only new companies
 - CSV export of all applications with every field (also the hidden ones), in the same format as the import template, so an export can be imported again
-- Backups: a download of the database and the uploaded files from the header, and an automatic backup once a day when the server starts (the last 14 are kept in `backend/backups/`)
-- Header with navigation and a footer that stays at the bottom of the window
+- Backups: a download of the database and the uploaded files from the Data menu, and an automatic backup once a day when the server starts (the last 14 are kept in `backend/backups/`)
+- Header with the Applications and Statistics pages, a Data menu (import, export, calendar, backup) and a settings menu (fields, theme, language), and a footer that stays at the bottom of the window
 - German and English interface with a language switch, the choice is remembered in the browser
 
 ## Tech Stack
@@ -220,24 +220,24 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 
 ## Usage
 
-- **Navigation:** the header gives access to the list, the import, the export and the field settings. The application name and the Applications entry reset search and filters.
-- **New application:** use the button in the header. Only the company is required.
+- **Navigation:** the header has the Applications and Statistics pages, the Data menu with Import, Export as CSV, Calendar (.ics) and Backup, the button for a new application, and the gear menu with Choose fields, the theme and the language. The application name and the Applications entry reset search and filters.
+- **New application:** the button in the header (or the plus button on small screens) opens a small dialog. Paste the link to the job posting and the company is read from it, with its logo when logos are switched on; job boards such as LinkedIn or StepStone are not mistaken for the company. Add the position, choose Planned or Applied and a type, and press Add. Show all fields continues in the full form with everything entered so far. Only the company is required, and a warning appears when it already exists.
 - **Status:** change it directly in the table, or filter by it with the buttons above the table. Each status has its own color: planned (gray), unsure (violet), applied (blue), interview (amber), rejected (red, name crossed out) and offer (green). The type is shown as a small badge with its own color. The colors are defined as CSS variables at the top of `frontend/src/style.css`.
 - **Favorites:** click the star in the table. The favorites button filters the list.
 - **Details:** click a row to open the detail dialog. There you can also edit, delete and manage documents.
-- **Fields:** the Fields entry lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
+- **Fields:** Choose fields in the gear menu lets you choose the visible table columns and the visible form fields. The company and the status are always shown. The selection is stored in the browser.
 - **Documents:** open an application, pick a type and attach files. Allowed types are PDF, Word, ODT, TXT, PNG and JPG, up to 10 MB per file.
 - **Import:** open Import, download the template if needed, choose a file and review the dry-run preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized; unknown columns are shown as ignored. Choose whether to add new companies and update existing applications or import new companies only. Existing companies are matched case-insensitively after whitespace normalization. In update mode, non-empty imported values update the oldest matching application; empty cells do not erase saved data. Repeated companies in the same file are counted as duplicates.
-- **Export:** the Export entry downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
+- **Export:** Export as CSV in the Data menu downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
 - **Reminders, sorting and grouping:** the banner above the list names the follow-ups that are due; Show narrows the list to them. Click a column header to sort (again for descending, a third time to reset). Group by company puts applications of the same company together under a header.
 - **Type:** the Art menu in the form starts empty; choose Stelle or Initiativ when it applies. The type is a badge in the list, on the cards and on the board (nothing is shown while it is empty). Next to the status chips there is a chip for each type and one for Ohne Art, so Planned plus Initiativ can be combined, or all applications that still need a type can be listed. In the bulk bar, pick a type or Art entfernen for the selected applications. Types that are stored in the data in other words (for example from an import) stay selectable and get their own color.
 - **Several at once:** tick the boxes in the first column; a bar offers a status change, a type, Delete and Clear selection. Every delete can be undone from the message that appears at the bottom.
 - **History and tags:** the detail view shows the history with the status changes and lets you add notes. Tags are entered comma separated in the form and can be used as a filter.
 - **Board:** drag a card to another column to change the status, or use the status menu on the card.
-- **Statistics, calendar, backup:** the Statistics entry shows the numbers and charts, Calendar downloads an .ics file with follow-ups and interviews, Backup downloads a zip with the database and the uploaded files.
-- **Dark mode:** the moon or sun button in the header switches the theme; without a choice the system setting is used.
+- **Statistics, calendar, backup:** the Statistics entry shows the numbers and charts; in the Data menu, Calendar (.ics) downloads a file with follow-ups and interviews and Backup downloads a zip with the database and the uploaded files.
+- **Dark mode:** the Theme setting in the gear menu offers System, Light and Dark; the moon or sun button in the header switches between light and dark. System, the default, follows the setting of the device.
 - **Views and locations:** switch between list, cards, board and map. In cards or map view, you can optionally enter your home address to see distances; it is stored only in this browser. Use the location lookup to geocode application addresses. Addresses are sent to OpenStreetMap Nominatim, and coordinates and lookup status are saved with the application. Requests are rate-limited; a batch may take several seconds. Applications without a match can be retried.
-- **Language:** switch between DE and EN in the header.
+- **Language:** switch between DE and EN in the gear menu.
 
 ## API
 
@@ -277,5 +277,5 @@ The table, form, detail view, field settings dialog and the CSV export pick it u
 ## Notes
 
 - The app has no authentication and is meant for local use. Uploaded documents are served without login. Session authentication is switched off for the API, so a login to the Django admin does not cause CSRF errors in the app. Add authentication and configure production settings (including `DEBUG`, `SECRET_KEY` and `ALLOWED_HOSTS`) before exposing it to a network.
-- A backup consists of `backend/db.sqlite3` and the folder `backend/media/`. The Backup entry in the header and `python manage.py backup` create a zip with both; `runserver` also creates one once a day in `backend/backups/`.
+- A backup consists of `backend/db.sqlite3` and the folder `backend/media/`. The Backup entry in the Data menu and `python manage.py backup` create a zip with both; `runserver` also creates one once a day in `backend/backups/`.
 - The `.gitignore` excludes the virtual environment, `node_modules`, the build output, the SQLite database, the media folder, `.env` files and local editor and Claude Code settings, so personal data stays out of the repository.

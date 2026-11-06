@@ -7,7 +7,7 @@ import { downloadApplications, downloadCalendar } from './exporter'
 import { VIEWS, loadView, saveView } from './geo'
 import { showToast } from './toast'
 import { knownKinds } from './kind'
-import { theme, toggleTheme } from './theme'
+import { theme, themeChoice, toggleTheme } from './theme'
 import FilterBar from './components/FilterBar.vue'
 import ApplicationTable from './components/ApplicationTable.vue'
 import ApplicationBoard from './components/ApplicationBoard.vue'
@@ -22,6 +22,8 @@ import ConfirmDialog from './components/ConfirmDialog.vue'
 import StatsPage from './components/StatsPage.vue'
 import BulkBar from './components/BulkBar.vue'
 import ToastBar from './components/ToastBar.vue'
+import MenuButton from './components/MenuButton.vue'
+import QuickAddDialog from './components/QuickAddDialog.vue'
 
 // The map library is only loaded when the map view is opened.
 const CompanyMap = defineAsyncComponent(() => import('./components/CompanyMap.vue'))
@@ -52,6 +54,7 @@ const companies = ref([]) // id and name of every application, for the warning a
 const detailId = ref(null)
 const showSettings = ref(false)
 const showImport = ref(false)
+const quickAdd = ref(false) // the small dialog for a new application
 const page = ref('applications') // 'applications' or 'stats'
 const allItems = ref([]) // for the statistics, regardless of the filters
 const view = ref(loadView()) // 'list', 'cards', 'board' or 'map'
@@ -201,8 +204,24 @@ async function openForm(item) {
   }
 }
 
+// "New application" opens the small dialog, "Show all fields" there continues in the full form.
+async function openNew() {
+  quickAdd.value = true
+  try {
+    companies.value = await api.companies()
+  } catch {
+    companies.value = []
+  }
+}
+
+function expandQuick(data) {
+  quickAdd.value = false
+  editing.value = data
+}
+
 function closeForm() {
   editing.value = null
+  quickAdd.value = false
   errorText.value = ''
 }
 
@@ -215,6 +234,7 @@ function onKey(e) {
   if (e.key !== 'Escape' || confirmState.value) return // the confirm dialog handles its own Escape
   if (showImport.value) showImport.value = false
   else if (showSettings.value) showSettings.value = false
+  else if (quickAdd.value) closeForm()
   else if (editing.value) closeForm()
   else detailId.value = null
 }
@@ -243,11 +263,14 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
       <nav class="site-nav" :aria-label="t('nav.label')">
         <button :class="{ active: page === 'applications' }" :aria-current="page === 'applications' ? 'page' : null" @click="showAll">{{ t('nav.applications') }}</button>
         <button :class="{ active: page === 'stats' }" :aria-current="page === 'stats' ? 'page' : null" @click="showStats">{{ t('nav.stats') }}</button>
-        <button @click="showImport = true">{{ t('import.button') }}</button>
-        <button @click="exportData">{{ t('export.button') }}</button>
-        <button @click="exportCalendar">{{ t('nav.calendar') }}</button>
-        <a class="nav-link" href="/api/backup/" download>{{ t('nav.backup') }}</a>
-        <button @click="showSettings = true">{{ t('settings.fields') }}</button>
+        <MenuButton :label="t('nav.data')" panel-class="data-panel">
+          <template #default="{ close }">
+            <button class="menu-item" @click="showImport = true; close()">{{ t('menu.import') }}</button>
+            <button class="menu-item" @click="exportData(); close()">{{ t('menu.exportCsv') }}</button>
+            <button class="menu-item" @click="exportCalendar(); close()">{{ t('menu.calendar') }}</button>
+            <a class="menu-item" href="/api/backup/" download @click="close()">{{ t('menu.backup') }}</a>
+          </template>
+        </MenuButton>
       </nav>
 
       <div class="bar-end">
@@ -257,8 +280,35 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
           :title="theme === 'dark' ? t('theme.toLight') : t('theme.toDark')"
           @click="toggleTheme"
         >{{ theme === 'dark' ? '☀' : '☾' }}</button>
-        <LanguageSwitch />
-        <button class="primary new-button" @click="openForm({})">{{ t('app.new') }}</button>
+        <button class="primary new-button" @click="openNew">{{ t('app.new') }}</button>
+        <MenuButton
+          trigger-class="settings-trigger"
+          panel-class="settings-panel"
+          align="right"
+          :arrow="false"
+          :aria-label="t('menu.settings')"
+        >
+          <template #label><span aria-hidden="true">⚙</span></template>
+          <template #default="{ close }">
+            <button class="menu-item" @click="showSettings = true; close()">{{ t('menu.fields') }}</button>
+            <div class="menu-row">
+              <span>{{ t('menu.theme') }}</span>
+              <div class="seg" role="group" :aria-label="t('menu.theme')">
+                <button
+                  v-for="choice in ['system', 'light', 'dark']"
+                  :key="choice"
+                  :class="{ active: themeChoice === choice }"
+                  :aria-pressed="themeChoice === choice"
+                  @click="themeChoice = choice"
+                >{{ t(`theme.${choice}`) }}</button>
+              </div>
+            </div>
+            <div class="menu-row">
+              <span>{{ t('menu.language') }}</span>
+              <LanguageSwitch />
+            </div>
+          </template>
+        </MenuButton>
       </div>
     </div>
   </header>
@@ -297,6 +347,7 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
         v-model:tag="tagFilter"
         v-model:kind="kindFilter"
         v-model:group="groupByCompany"
+        v-model:due="dueOnly"
         :stats="stats"
         :total="total"
         :show-group="view === 'list'"
@@ -347,7 +398,7 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
       <p v-else-if="!error" class="empty">{{ t('app.empty') }}</p>
     </template>
 
-    <button class="primary fab" :aria-label="t('app.new')" @click="openForm({})">+ {{ t('app.new') }}</button>
+    <button class="primary fab" :aria-label="t('app.new')" @click="openNew">+ {{ t('app.new') }}</button>
 
     <DetailModal
       v-if="detail"
@@ -357,6 +408,15 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
       @edit="editFromDetail"
       @remove="remove"
       @changed="load"
+    />
+    <QuickAddDialog
+      v-if="quickAdd"
+      :error="errorText"
+      :companies="companies"
+      :kinds="kindKeys"
+      @save="(data) => save(null, data)"
+      @expand="expandQuick"
+      @close="closeForm"
     />
     <ApplicationForm v-if="editing" :item="editing" :error="errorText" :companies="companies" :kinds="kindKeys" @save="save" @close="closeForm" />
     <FieldSettings v-if="showSettings" @close="showSettings = false" />

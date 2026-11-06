@@ -14,23 +14,27 @@ function stored() {
 const media = window.matchMedia?.('(prefers-color-scheme: dark)')
 const system = () => (media?.matches ? 'dark' : 'light')
 
-// Follows the system setting until the switch in the header is used once.
-export const theme = ref(stored() ?? system())
+// The choice is 'system' (the default), 'light' or 'dark'. The theme is the one that is really shown.
+export const themeChoice = ref(stored() ?? 'system')
+export const theme = ref(themeChoice.value === 'system' ? system() : themeChoice.value)
 
 const apply = (value) => { document.documentElement.dataset.theme = value }
 apply(theme.value)
 
-watch(theme, (value) => {
-  apply(value)
+watch(themeChoice, (choice) => {
   try {
-    localStorage.setItem(KEY, value)
+    if (choice === 'system') localStorage.removeItem(KEY)
+    else localStorage.setItem(KEY, choice)
   } catch {
     /* storage may be blocked, the choice then lasts for this session */
   }
+  theme.value = choice === 'system' ? system() : choice
 })
+watch(theme, apply)
 
 media?.addEventListener?.('change', () => {
-  if (!stored()) theme.value = system()
+  if (themeChoice.value === 'system') theme.value = system()
 })
 
-export const toggleTheme = () => { theme.value = theme.value === 'dark' ? 'light' : 'dark' }
+// The sun or moon button in the header switches between light and dark.
+export const toggleTheme = () => { themeChoice.value = theme.value === 'dark' ? 'light' : 'dark' }
