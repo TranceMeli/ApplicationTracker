@@ -2,9 +2,9 @@
 import { vBackdropClose } from '../backdrop'
 import { computed, reactive } from 'vue'
 import { today } from '../constants'
-import { FORM_FIELDS, visibleFormFields } from '../fields'
+import { FORM_FIELDS, detailSections, visibleFormFields } from '../fields'
 import { t } from '../i18n'
-import { kindName } from '../kind'
+import FormField from './FormField.vue'
 
 const props = defineProps({
   item: Object,
@@ -33,6 +33,23 @@ const duplicates = computed(() => {
   return key ? props.companies.filter((c) => c.id !== props.item.id && normalize(c.company) === key) : []
 })
 
+// The fields of the header come first, the rest is grouped like the detail view and folds away.
+// A section starts open when it already has data (or a default such as today's date).
+const topFields = computed(() => visibleFormFields.value.filter((f) => !f.group))
+const filledCount = (fields) => fields.filter((f) => form[f.key] !== '' && form[f.key] !== null && form[f.key] !== undefined).length
+const startOpen = new Set(detailSections.value.filter((s) => filledCount(s.fields) > 0).map((s) => s.id)) // fixed at the start, so typing never folds a section
+const sections = computed(() =>
+  detailSections.value
+    .filter((section) => section.fields.length)
+    .map((section) => ({
+      id: section.id,
+      title: section.name || t(`group.${section.id}`),
+      fields: section.fields,
+      filled: filledCount(section.fields),
+      open: startOpen.has(section.id),
+    })),
+)
+
 function submit() {
   const data = { ...form }
   for (const f of FORM_FIELDS) if (f.type === 'date') data[f.key] = data[f.key] || null
@@ -45,31 +62,14 @@ function submit() {
     <form class="dialog" @submit.prevent="submit">
       <h2>{{ item.id ? t('form.edit') : t('form.new') }}</h2>
 
-      <label v-for="f in visibleFormFields" :key="f.key" :class="{ wide: f.wide }">
-        {{ t(f.label) }}
-        <select v-if="f.key === 'kind'" v-model="form.kind">
-          <option value="">–</option>
-          <option v-for="k in kindOptions" :key="k" :value="k">{{ kindName(k) }}</option>
-        </select>
-        <select v-else-if="f.type === 'select'" v-model="form[f.key]">
-          <option v-if="!f.noEmpty" value="">–</option>
-          <option v-for="o in f.options" :key="o" :value="o">{{ t(`${f.optionsPrefix}.${o}`) }}</option>
-        </select>
-        <textarea v-else-if="f.type === 'textarea'" v-model="form[f.key]" rows="3" />
-        <input
-          v-else
-          v-model="form[f.key]"
-          :type="f.type"
-          :placeholder="f.placeholder ? t(f.placeholder) : undefined"
-          :required="f.required"
-          :autocomplete="f.autocomplete"
-          :inputmode="f.inputmode"
-          :maxlength="f.maxlength"
-        />
-        <small v-if="f.key === 'company' && duplicates.length" class="notice">
-          {{ t('form.duplicate', { name: duplicates[0].company, n: duplicates[0].id }) }}
-        </small>
-      </label>
+      <FormField v-for="f in topFields" :key="f.key" :f="f" :form="form" :kind-options="kindOptions" :duplicates="duplicates" />
+
+      <details v-for="section in sections" :key="section.id" class="fold" :open="section.open">
+        <summary>{{ section.title }}<span class="hint">{{ section.filled }} / {{ section.fields.length }}</span></summary>
+        <div class="fold-body">
+          <FormField v-for="f in section.fields" :key="f.key" :f="f" :form="form" :kind-options="kindOptions" :duplicates="duplicates" />
+        </div>
+      </details>
 
       <label class="wide check"><input v-model="form.is_favorite" type="checkbox" /> {{ t('field.favoriteMark') }}</label>
       <p v-if="error" class="error wide">{{ error }}</p>

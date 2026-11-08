@@ -5,6 +5,8 @@ import { visibleTableFields } from '../fields'
 import { t } from '../i18n'
 import CompanyLogo from './CompanyLogo.vue'
 import KindBadge from './KindBadge.vue'
+import Icon from './Icon.vue'
+import MenuButton from './MenuButton.vue'
 import { kindName } from '../kind'
 
 const props = defineProps({ items: Array, selected: { type: Array, default: () => [] }, group: Boolean })
@@ -154,8 +156,8 @@ const arrow = (key) => (sort.value.key === key ? (sort.value.dir === 'asc' ? ' �
               <div v-else-if="f.key === 'company'" class="company-cell">
                 <div class="company">
                   <CompanyLogo :item="r.item" />
-                  <a v-if="r.item.link" :href="r.item.link" target="_blank" rel="noopener" @click.stop>{{ r.item.company }}</a>
-                  <span v-else class="name">{{ r.item.company }}</span>
+                  <button type="button" class="row-open name" :title="t('row.open')">{{ r.item.company }}</button>
+                  <a v-if="r.item.link" class="ext" :href="r.item.link" target="_blank" rel="noopener" :aria-label="t('row.openLink', { name: r.item.company })" :title="t('row.openLink', { name: r.item.company })" @click.stop><Icon name="external" /></a>
                   <span v-if="!group && counts.get(companyKey(r.item.company)) > 1" class="same" :title="t('group.count', { n: counts.get(companyKey(r.item.company)) })">
                     ×{{ counts.get(companyKey(r.item.company)) }}
                   </span>
@@ -164,32 +166,43 @@ const arrow = (key) => (sort.value.key === key ? (sort.value.dir === 'asc' ? ' �
                   <span v-for="tag in tagsOf(r.item)" :key="tag" class="tag">{{ tag }}</span>
                 </div>
               </div>
-              <select
-                v-else-if="f.key === 'status'"
-                class="badge"
-                :class="r.item.status"
-                :value="r.item.status"
-                @click.stop
-                @change="$emit('status', r.item, $event.target.value)"
-              >
-                <option v-for="key in STATUS_KEYS" :key="key" :value="key">{{ t(`status.${key}`) }}</option>
-              </select>
+              <span v-else-if="f.key === 'status'" class="status-cell" :class="r.item.status">
+                <Icon :name="r.item.status" />
+                <select
+                  class="badge"
+                  :class="r.item.status"
+                  :value="r.item.status"
+                  :aria-label="t('field.status')"
+                  @click.stop
+                  @change="$emit('status', r.item, $event.target.value)"
+                >
+                  <option v-for="key in STATUS_KEYS" :key="key" :value="key">{{ t(`status.${key}`) }}</option>
+                </select>
+              </span>
               <template v-else-if="f.key === 'kind'">
                 <KindBadge v-if="r.item.kind" :item="r.item" />
                 <template v-else>–</template>
               </template>
               <a v-else-if="f.type === 'email' && r.item.email" :href="`mailto:${r.item.email}`" @click.stop>{{ r.item.email }}</a>
               <a v-else-if="f.type === 'url' && r.item[f.key]" :href="r.item[f.key]" target="_blank" rel="noopener" @click.stop>↗</a>
-              <template v-else-if="f.type === 'date'">{{ fmt(r.item[f.key]) }}</template>
+              <template v-else-if="f.type === 'date'">
+                <template v-if="f.key === 'follow_up' && overdue(r.item)"><Icon name="clock" />{{ fmt(r.item[f.key]) }} · {{ t('due.overdue') }}</template>
+                <template v-else>{{ fmt(r.item[f.key]) }}</template>
+              </template>
               <template v-else-if="f.type === 'select'">
                 {{ r.item[f.key] ? t(`${f.optionsPrefix}.${r.item[f.key]}`) : '–' }}
               </template>
               <template v-else>{{ r.item[f.key] || '–' }}</template>
             </td>
 
-            <td class="actions" @click.stop>
-              <button @click="$emit('edit', r.item)">{{ t('btn.edit') }}</button>
-              <button @click="$emit('remove', r.item)">{{ t('btn.delete') }}</button>
+            <td class="actions row-menu" @click.stop>
+              <MenuButton :aria-label="t('row.menu', { name: r.item.company })" :arrow="false" align="right">
+                <template #label><span aria-hidden="true">⋯</span></template>
+                <template #default="{ close }">
+                  <button class="menu-item" @click="$emit('edit', r.item); close()">{{ t('btn.edit') }}</button>
+                  <button class="menu-item danger-item" @click="$emit('remove', r.item); close()">{{ t('btn.delete') }}</button>
+                </template>
+              </MenuButton>
             </td>
           </tr>
         </template>

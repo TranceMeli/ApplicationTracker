@@ -4,6 +4,7 @@ import { OPEN_STATUSES, STATUS_KEYS, daysBetween, isDue, today } from '../consta
 import { t } from '../i18n'
 import CompanyLogo from './CompanyLogo.vue'
 import KindBadge from './KindBadge.vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({ items: Array })
 const emit = defineEmits(['open', 'status'])
@@ -37,7 +38,7 @@ const waiting = (i) => (OPEN_STATUSES.includes(i.status) && i.date ? daysBetween
       @drop.prevent="onDrop($event, col.key)"
     >
       <h3>
-        <span><span class="swatch" :class="col.key" aria-hidden="true"></span>{{ t(`status.${col.key}`) }}</span>
+        <span><Icon :name="col.key" class="chip-ico" :class="col.key" />{{ t(`status.${col.key}`) }}</span>
         <span class="count">{{ col.items.length }}</span>
       </h3>
       <article
@@ -58,16 +59,19 @@ const waiting = (i) => (OPEN_STATUSES.includes(i.status) && i.date ? daysBetween
         <p v-if="i.position" class="card-position">{{ i.position }}</p>
         <KindBadge :item="i" />
         <p v-if="waiting(i) !== null" class="sub" :class="{ due: isDue(i) }">{{ t('stats.days', { n: waiting(i) }) }}</p>
-        <select
-          class="badge"
-          :class="i.status"
-          :value="i.status"
-          :aria-label="t('field.status')"
-          @click.stop
-          @change="$emit('status', i, $event.target.value)"
-        >
-          <option v-for="key in STATUS_KEYS" :key="key" :value="key">{{ t(`status.${key}`) }}</option>
-        </select>
+        <span class="status-cell" :class="i.status">
+          <Icon :name="i.status" />
+          <select
+            class="badge"
+            :class="i.status"
+            :value="i.status"
+            :aria-label="t('field.status')"
+            @click.stop
+            @change="$emit('status', i, $event.target.value)"
+          >
+            <option v-for="key in STATUS_KEYS" :key="key" :value="key">{{ t(`status.${key}`) }}</option>
+          </select>
+        </span>
       </article>
     </section>
   </div>

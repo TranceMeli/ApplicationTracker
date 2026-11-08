@@ -10,7 +10,7 @@
 ## Preview
 
 <p align="center">
-  <img src="frontend/src/assets/screenshot/preview-list.jpg" alt="Listenansicht mit Filter, Statusfarben und Art" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-list.jpg" alt="Listenansicht mit Filter, Statussymbolen und Art" width="48%">
   <img src="frontend/src/assets/screenshot/preview-detail.jpg" alt="Detailansicht mit Statusleiste, Reitern und Abschnitten" width="48%">
 </p>
 <p align="center">
@@ -39,7 +39,8 @@ This project is under active development. Features and the data model may still 
 - Type per application, chosen from a menu in addition to the status and empty until set: "Stelle" (answer to a job posting, rose) or "Initiativ" (unsolicited, teal). Together with the status this gives combinations such as Planned - Initiativ or Applied - Stelle; there are filter chips for each type and for applications without one, a column in the table, a badge on the cards and the board, and a bulk change
 - Favorites with a star marker and a favorites filter
 - Compact toolbar: live search (company, position, contact person, email, phone, city, notes; the slash key jumps to it), status segments with counters and a Filter menu for the type, tags, favorites, due follow-ups and grouping; the active filters stay visible as chips that can be removed one by one
-- Status colors that are the same in the table, on the cards and on the map
+- Status shown by color, icon and text (never by color alone): the same badges in the table, on the cards, on the board and as pins on the map
+- Design based on the colour and typography research: fixed colour and type scales as tokens in `style.css` (neutral scale, one lime accent, four signal colours), text and control contrast checked against WCAG AA (4.5:1 text, 3:1 borders), a type scale of six sizes with 16 px body text, a separate dark palette, a visible focus ring, 44 px touch targets and 16 px inputs on phones, and reduced motion respected
 - Consecutive numbering of the applications in the table and detail view
 - Detail view with the status, type and next date in the header, quick actions (mail, call, open the posting), a bar that shows the way from planned to offer, tabs for the overview, the history and the documents, the fields in sections and arrows to go through the applications; a field is changed by clicking it
 - Follow-up reminders: a banner lists the applications whose follow-up date has come (status applied) and narrows the list to them with one click, overdue dates are highlighted in the table
@@ -61,7 +62,10 @@ This project is under active development. Features and the data model may still 
 - Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview and a choice to update existing applications or import only new companies
 - CSV export of all applications with every field (also the hidden ones), in the same format as the import template, so an export can be imported again
 - Backups: a download of the database and the uploaded files from the Data menu, and an automatic backup once a day when the server starts (the last 14 are kept in `backend/backups/`)
-- Header with the Applications and Statistics pages, a Data menu (import, export, calendar, backup) and a settings menu (fields, theme, language), and a footer that stays at the bottom of the window
+- Light header that stays in view, with the Applications and Statistics pages, a Data menu (import, export, calendar, backup) and a settings menu (fields, theme, language); the table header stays in view while scrolling
+- Table rows are reachable by keyboard (the company name opens the details, the arrow icon the posting, the three-dot menu edits or deletes)
+- Clear states: a placeholder while loading, a first-run page, a "no matches" page with a reset button and a retry page when the server is unreachable
+- The form keeps company, position, status and type on top, the other fields fold away in sections that start open when they already have data
 - German and English interface with a language switch, the choice is remembered in the browser
 
 ## Tech Stack

@@ -4,6 +4,8 @@ import 'leaflet/dist/leaflet.css'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { distanceLabel, hasCoords, home } from '../geo'
 import { t } from '../i18n'
+import { ICON_PATHS } from '../icons'
+import Icon from './Icon.vue'
 
 const props = defineProps({ items: Array })
 const emit = defineEmits(['open'])
@@ -14,15 +16,10 @@ let layer
 let line
 let lastFit = ''
 
-// Same status colors as in style.css (--planned, --unsure, ...). Planned is a white dot with a dark ring.
-const COLORS = {
-  planned: '#FFFFFF',
-  unsure: '#8F6BC4',
-  applied: '#2F7BE0',
-  interview: '#F0A020',
-  rejected: '#D6453D',
-  offer: '#2F8A3E',
-}
+// A pin carries the status icon on the status color (see .pin in style.css), so the status is not told by color alone.
+const STATUSES = ['planned', 'unsure', 'applied', 'interview', 'rejected', 'offer']
+const pinHtml = (status) =>
+  `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="${ICON_PATHS[status] ?? ICON_PATHS.planned}"/></svg>`
 
 const placed = computed(() => props.items.filter(hasCoords))
 const unplacedCount = computed(() => props.items.length - placed.value.length)
@@ -93,14 +90,14 @@ function draw() {
 
   const points = []
   for (const { item, latlng } of spread(placed.value)) {
-    const marker = L.circleMarker(latlng, {
-      radius: 8,
-      weight: item.geo_precision === 'city' ? 2 : 1.5,
-      color: '#1F2328',
-      dashArray: item.geo_precision === 'city' ? '3 3' : null,
-      fillColor: COLORS[item.status] ?? COLORS.planned,
-      fillOpacity: item.geo_precision === 'city' ? 0.55 : 0.9,
-    }).bindPopup(() => popupFor(item), { minWidth: 160 })
+    const icon = L.divIcon({
+      className: `pin ${item.status}${item.geo_precision === 'city' ? ' approx' : ''}`,
+      html: pinHtml(item.status),
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+    })
+    const marker = L.marker(latlng, { icon, title: `${item.company} (${t(`status.${item.status}`)})` })
+      .bindPopup(() => popupFor(item), { minWidth: 160 })
     marker.bindTooltip(textNode(item.company))
     marker.on('popupopen', () => {
       line?.remove()
@@ -158,7 +155,7 @@ watch(() => [props.items, home.value], draw)
     <p v-if="unplacedCount" class="sub map-note">{{ t('geo.notOnMap', { n: unplacedCount }) }}</p>
     <ul class="legend" aria-hidden="true">
       <li><span class="dot home"></span>{{ t('geo.home') }}</li>
-      <li v-for="(color, key) in COLORS" :key="key"><span class="dot" :style="{ background: color }"></span>{{ t(`status.${key}`) }}</li>
+      <li v-for="key in STATUSES" :key="key"><span class="pin mini" :class="key"><Icon :name="key" /></span>{{ t(`status.${key}`) }}</li>
       <li><span class="dot approx"></span>{{ t('geo.approx') }}</li>
     </ul>
   </div>

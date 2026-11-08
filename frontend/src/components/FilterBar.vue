@@ -4,6 +4,7 @@ import { STATUS_KEYS } from '../constants'
 import { t } from '../i18n'
 import { kindClass, kindName, knownKinds } from '../kind'
 import MenuButton from './MenuButton.vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({ stats: Object, total: Number, showGroup: Boolean })
 const search = defineModel('search')
@@ -75,7 +76,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
           :class="{ active: status === key }"
           @click="status = status === key ? '' : key"
         >
-          <span class="swatch" :class="key" aria-hidden="true"></span>
+          <Icon :name="key" class="chip-ico" :class="key" />
           {{ t(`status.${key}`) }} {{ stats.by_status?.[key] || 0 }}
         </button>
       </div>

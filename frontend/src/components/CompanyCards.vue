@@ -4,6 +4,7 @@ import { distanceLabel, home } from '../geo'
 import { t } from '../i18n'
 import CompanyLogo from './CompanyLogo.vue'
 import KindBadge from './KindBadge.vue'
+import Icon from './Icon.vue'
 
 defineProps({ items: Array })
 defineEmits(['open', 'favorite'])
@@ -40,7 +41,7 @@ const place = (i) => [i.postal_code, i.city].filter(Boolean).join(' ')
         <span v-for="tag in i.tags.split(', ')" :key="tag" class="tag">{{ tag }}</span>
       </div>
       <div class="badges">
-        <span class="badge" :class="i.status">{{ t(`status.${i.status}`) }}</span>
+        <span class="badge" :class="i.status"><Icon :name="i.status" />{{ t(`status.${i.status}`) }}</span>
         <KindBadge :item="i" />
       </div>
 

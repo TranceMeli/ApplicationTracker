@@ -8,6 +8,7 @@ import { locale, t } from '../i18n'
 import { askConfirm } from '../confirm'
 import { kindClass, kindName } from '../kind'
 import CompanyLogo from './CompanyLogo.vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   item: Object,
@@ -274,15 +275,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       </header>
 
       <div class="detail-state">
-        <select
-          class="badge status-select"
-          :class="item.status"
-          :value="item.status"
-          :aria-label="t('field.status')"
-          @change="$emit('status', item, $event.target.value)"
-        >
-          <option v-for="key in STATUS_KEYS" :key="key" :value="key">{{ t(`status.${key}`) }}</option>
-        </select>
+        <span class="status-cell" :class="item.status">
+          <Icon :name="item.status" />
+          <select
+            class="badge status-select"
+            :class="item.status"
+            :value="item.status"
+            :aria-label="t('field.status')"
+            @change="$emit('status', item, $event.target.value)"
+          >
+            <option v-for="key in STATUS_KEYS" :key="key" :value="key">{{ t(`status.${key}`) }}</option>
+          </select>
+        </span>
         <select
           class="kind-select"
           :class="kindClass(item.kind)"

@@ -25,6 +25,7 @@ import BulkBar from './components/BulkBar.vue'
 import ToastBar from './components/ToastBar.vue'
 import MenuButton from './components/MenuButton.vue'
 import QuickAddDialog from './components/QuickAddDialog.vue'
+import Icon from './components/Icon.vue'
 
 // The map library is only loaded when the map view is opened.
 const CompanyMap = defineAsyncComponent(() => import('./components/CompanyMap.vue'))
@@ -49,6 +50,7 @@ const groupByCompany = ref(readGroup())
 const dueOnly = ref(false)
 const selected = ref([])
 const backendDown = ref(false)
+const loaded = ref(false) // false until the first answer (or failure) of the backend, shows the placeholder
 const errorText = ref('')
 const editing = ref(null) // null = closed, {} = new, {id, ...} = edit
 const companies = ref([]) // id and name of every application, for the warning about doubles
@@ -68,6 +70,7 @@ const detail = computed(
   () => items.value.find((i) => i.id === detailId.value) || (pinned.value?.id === detailId.value ? pinned.value : null),
 )
 const error = computed(() => (backendDown.value ? t('app.backendDown') : errorText.value))
+const hasFilters = computed(() => !!(search.value || statusFilter.value || favoriteOnly.value || tagFilter.value || kindFilter.value || dueOnly.value))
 
 // Oldest first, so the numbers run 1, 2, 3 ... in the order the entries were created.
 const sortedItems = computed(() => [...items.value].sort((a, b) => a.id - b.id))
@@ -108,8 +111,9 @@ async function load() {
     if (tagFilter.value && !(tagFilter.value in (counts.tags ?? {}))) tagFilter.value = ''
     backendDown.value = false
     errorText.value = ''
+    loaded.value = true
   } catch (e) {
-    if (id === loadId) backendDown.value = true
+    if (id === loadId) { backendDown.value = true; loaded.value = true }
   }
 }
 
@@ -198,14 +202,18 @@ async function exportCalendar() {
   }
 }
 
-function showAll() {
-  page.value = 'applications'
+function clearFilters() {
   search.value = ''
   statusFilter.value = ''
   favoriteOnly.value = false
   tagFilter.value = ''
   kindFilter.value = ''
   dueOnly.value = false
+}
+
+function showAll() {
+  page.value = 'applications'
+  clearFilters()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
@@ -377,7 +385,7 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
         :show-group="view === 'list'"
       />
 
-      <p v-if="error" class="error">{{ error }}</p>
+      <p v-if="error && !backendDown" class="error">{{ error }}</p>
 
       <BulkBar
         v-if="selected.length && view === 'list'"
@@ -419,7 +427,30 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
           <CompanyMap v-else :items="visibleItems" @open="(i) => (detailId = i.id)" />
         </template>
       </template>
-      <p v-else-if="!error" class="empty">{{ t('app.empty') }}</p>
+      <div v-else-if="!loaded" class="skeleton" role="status" aria-busy="true" :aria-label="t('state.loading')">
+        <i v-for="n in 8" :key="n"></i>
+      </div>
+      <div v-else-if="backendDown" class="state failed" role="alert">
+        <Icon name="rejected" />
+        <h2>{{ t('state.downTitle') }}</h2>
+        <p>{{ t('state.downText') }}</p>
+        <div class="state-actions"><button @click="load">{{ t('state.retry') }}</button></div>
+      </div>
+      <div v-else-if="hasFilters" class="state">
+        <Icon name="unsure" />
+        <h2>{{ t('state.noHitsTitle') }}</h2>
+        <p>{{ t('state.noHitsText') }}</p>
+        <div class="state-actions"><button @click="clearFilters">{{ t('state.reset') }}</button></div>
+      </div>
+      <div v-else-if="!error" class="state">
+        <Icon name="planned" />
+        <h2>{{ t('state.emptyTitle') }}</h2>
+        <p>{{ t('state.emptyText') }}</p>
+        <div class="state-actions">
+          <button class="primary" @click="openNew">{{ t('app.new') }}</button>
+          <button @click="showImport = true">{{ t('menu.import') }}</button>
+        </div>
+      </div>
     </template>
 
     <button class="primary fab" :aria-label="t('app.new')" @click="openNew">+ {{ t('app.new') }}</button>
