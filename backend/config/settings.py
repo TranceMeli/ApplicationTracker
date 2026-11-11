@@ -130,6 +130,9 @@ MAILERS = {
     },
 }
 
+# The app shows uploaded documents in a frame of its own page (same origin only).
+X_FRAME_OPTIONS = 'SAMEORIGIN'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 

@@ -20,4 +20,4 @@ export const fmt = (d) =>
         .toLocaleDateString(locale.value === 'de' ? 'de-DE' : 'en-GB')
     : '–'
 
-export const KIND_KEYS = ['cover_letter', 'cv', 'certificate', 'other']
+export const KIND_KEYS = ['cover_letter', 'cv', 'certificate', 'complete', 'other']

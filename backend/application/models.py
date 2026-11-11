@@ -113,6 +113,7 @@ class Attachment(models.Model):
         COVER_LETTER = "cover_letter", "Anschreiben"
         CV = "cv", "Lebenslauf"
         CERTIFICATE = "certificate", "Zeugnis"
+        COMPLETE = "complete", "Gesamtunterlagen"
         OTHER = "other", "Sonstiges"
 
     application = models.ForeignKey(Application, related_name="attachments", on_delete=models.CASCADE)

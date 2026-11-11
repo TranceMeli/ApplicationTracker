@@ -22,6 +22,13 @@
   <img src="frontend/src/assets/screenshot/preview-map.jpg" alt="Kartenansicht mit Standorten der Bewerbungen" width="48%">
 </p>
 <p align="center">
+  <img src="frontend/src/assets/screenshot/preview-files.jpg" alt="Reiter Unterlagen mit Umbenennen, Kopieren und Hinweis zum Ziehen und Einfügen" width="48%">
+  <img src="frontend/src/assets/screenshot/preview-viewer.jpg" alt="Dokument-Ansicht mit einem PDF über der Detailansicht" width="48%">
+</p>
+<p align="center">
+  <img src="frontend/src/assets/screenshot/preview-sankey.jpg" alt="Sankey-Diagramm vom Absenden über die Antwort bis zum Ergebnis" width="62%">
+</p>
+<p align="center">
   <img src="frontend/src/assets/screenshot/preview-dark.jpg" alt="Dunkles Design mit geöffnetem Filter-Menü" width="62%">
   <img src="frontend/src/assets/screenshot/preview-mobile.jpg" alt="Detailansicht auf dem Handy" width="21%">
 </p>
@@ -51,9 +58,10 @@ This project is under active development. Features and the data model may still 
 - Tags per application (comma separated, shown as chips, filter above the list); a warning appears in the form when the company already exists
 - Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view, and arrange the fields of the detail view in sections (reorder them, move fields between them, add sections of your own). Hidden fields are not deleted, their data stays stored and can be shown again at any time
 - Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
-- Document attachments per application (cover letter, CV, certificate, other)
+- Document attachments per application (cover letter, CV, certificate, complete application, other); PDFs, images and text files open in a viewer dialog on top of the detail view (arrow keys switch between the documents, Escape closes only the viewer), other file types can be downloaded
+- Documents can be renamed (the file extension stays), files are attached by dragging them onto the detail view or pasting them with Ctrl+V (also screenshots), and a document can be dragged out of the list into an e-mail or onto the desktop (Chrome and Edge); the copy button puts an image on the clipboard as an image and any other file as its address, because browsers cannot copy a PDF or Word file itself
 - List, card, board and map views for applications; the board shows one column per status and moves an application when its card is dragged to another column
-- Statistics page: response rate, average days to an answer, applications per week and the way from application to offer
+- Statistics page: response rate, average days to an answer, applications per week, a Sankey diagram of the path of the sent applications (answered or not, then the outcome) and the way from application to offer
 - Calendar export (.ics) of follow-up dates and interview dates
 - Dark mode that follows the system setting and can be chosen in the settings menu (System, Light, Dark) or switched with the moon or sun button; responsive layout with a floating add button on small screens
 - Optional home address stored in the browser, with approximate distances to application locations
@@ -155,6 +163,7 @@ application-tracker/
         ├── confirm.js          Confirmation dialog instead of window.confirm
         ├── backdrop.js         Closes dialogs only on a real click on the backdrop
         ├── fields.js           Field catalog and visibility settings
+        ├── icons.js            Line icons for the statuses and a few actions
         ├── exporter.js         CSV export and import template download
         ├── i18n.js             German and English texts
         ├── style.css           Color palette (CSS variables) and layout
@@ -162,7 +171,11 @@ application-tracker/
             ├── FilterBar.vue
             ├── ApplicationTable.vue
             ├── ApplicationForm.vue
+            ├── FormField.vue
             ├── DetailModal.vue
+            ├── DocumentViewer.vue
+            ├── Icon.vue
+            ├── SankeyChart.vue
             ├── FieldSettings.vue
             ├── ImportDialog.vue
             ├── LanguageSwitch.vue
@@ -229,7 +242,7 @@ cd backend
 python manage.py test
 ```
 
-The tests cover the API (search, ordering, file cleanup), attachment uploads and the import.
+The tests cover the API (search, ordering, file cleanup), attachment uploads and renaming, and the import.
 
 ## Usage
 
@@ -239,7 +252,7 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 - **Favorites:** click the star in the table. The favorites button filters the list.
 - **Details:** click a row to open the detail view. The header has the status and type menus (change them without leaving the view), the next date and quick actions; the bar below shows how far the application has come. The Overview tab groups the fields in sections and shows only what is filled in, empty fields are offered as "+ field" at the bottom. Click a value or its pencil to change it in place (Enter saves, Escape cancels); the address is one entry with three inputs. History and Documents are tabs of their own, and the tab you used last is remembered. The arrows in the header, the left and right arrow keys and the letters J and K go to the next or previous application of the list. Duplicate copies an application into the form, for example for a second position at the same company.
 - **Fields:** Manage fields in the gear menu has the sections of the detail view on the left and the fields of the selected section on the right. For each field, switch it on or off for the form and detail view and for the table, move it to another section and change its position; sections can be reordered, and sections of your own can be added, renamed and deleted (their fields return to the default sections). Fields without a section (company, position, status, type, number) are always in the header. Hide empty fields turns the "+ field" display on or off. New fields of a later version appear in their section automatically. The company and the status are always shown, and the choices are stored in the browser.
-- **Documents:** open an application, pick a type and attach files. Allowed types are PDF, Word, ODT, TXT, PNG and JPG, up to 10 MB per file.
+- **Documents:** open an application and go to the Documents tab. Pick a type, then attach files with the button, by dragging them onto the detail view or by pasting them with Ctrl+V. Allowed types are PDF, Word, ODT, TXT, PNG and JPG, up to 10 MB per file. Click a name to view the document in a dialog, the pencil renames it (Enter saves, Escape cancels, the extension is kept), the copy button or Ctrl+C on a name copies it, and the arrow downloads it. Drag a row into an e-mail or onto the desktop to hand the file over (Chrome and Edge).
 - **Import:** open Import, download the template if needed, choose a file and review the dry-run preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized; unknown columns are shown as ignored. Choose whether to add new companies and update existing applications or import new companies only. Existing companies are matched case-insensitively after whitespace normalization. In update mode, non-empty imported values update the oldest matching application; empty cells do not erase saved data. Repeated companies in the same file are counted as duplicates.
 - **Export:** Export as CSV in the Data menu downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
 - **Reminders, sorting and grouping:** the banner above the list names the follow-ups that are due; Show narrows the list to them. Click a column header to sort (again for descending, a third time to reset). Group by company puts applications of the same company together under a header.
@@ -269,6 +282,7 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 | POST | `/api/geocode/` | Look up one address without saving it on the server |
 | GET | `/api/logo/?domain=<domain>` | Icon of a company domain from the local cache or DuckDuckGo, 404 when there is none |
 | GET, POST | `/api/attachments/` | List (`?application=<id>`) and upload a file (multipart: `application`, `file`, `kind`) |
+| PATCH | `/api/attachments/<id>/` | Rename an attachment (`name`, JSON; the file extension is kept) or change its `kind` |
 | DELETE | `/api/attachments/<id>/` | Remove an attachment and its file |
 
 Uploaded files are served under `/media/` while `DEBUG` is on. Files are removed from disk whenever their attachment is deleted, also through the admin or when the application is deleted.

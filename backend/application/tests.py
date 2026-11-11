@@ -22,6 +22,44 @@ class AttachmentApiTests(TestCase):
         self.application = Application.objects.create(company="Beispielfirma")
         self.client = APIClient()
 
+    def test_a_document_can_be_renamed_and_keeps_its_extension(self):
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=Path(media_root)):
+                created = self.client.post(
+                    reverse("attachment-list"),
+                    {
+                        "application": self.application.id,
+                        "file": SimpleUploadedFile("scan001.pdf", b"PDF-Inhalt", content_type="application/pdf"),
+                        "kind": "other",
+                    },
+                    format="multipart",
+                ).data
+                url = reverse("attachment-detail", args=[created["id"]])
+
+                renamed = self.client.patch(url, {"name": "Anschreiben Beispielfirma"}, format="json")
+                self.assertEqual(renamed.status_code, 200)
+                self.assertEqual(renamed.data["name"], "Anschreiben Beispielfirma.pdf")
+
+                self.assertEqual(self.client.patch(url, {"name": "   "}, format="json").status_code, 400)
+
+                cleaned = self.client.patch(url, {"name": "../../evil.pdf"}, format="json")
+                self.assertEqual(cleaned.data["name"], "evil.pdf")
+
+    def test_complete_application_documents_can_be_uploaded(self):
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=Path(media_root)):
+                response = self.client.post(
+                    reverse("attachment-list"),
+                    {
+                        "application": self.application.id,
+                        "file": SimpleUploadedFile("gesamt.pdf", b"PDF-Inhalt", content_type="application/pdf"),
+                        "kind": "complete",
+                    },
+                    format="multipart",
+                )
+                self.assertEqual(response.status_code, 201)
+                self.assertEqual(response.data["kind"], "complete")
+
     def test_upload_is_validated_and_included_with_application(self):
         with tempfile.TemporaryDirectory() as media_root:
             with override_settings(MEDIA_ROOT=Path(media_root)):

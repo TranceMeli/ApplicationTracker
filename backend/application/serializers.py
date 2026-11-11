@@ -9,15 +9,29 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 class AttachmentSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
+    name = serializers.CharField(max_length=255, required=False)
 
     class Meta:
         model = Attachment
         fields = ["id", "application", "file", "name", "kind", "uploaded_at"]
-        read_only_fields = ["name", "uploaded_at"]
+        read_only_fields = ["uploaded_at"]
 
-    def get_name(self, attachment):
-        return attachment.name or os.path.basename(attachment.file.name)
+    def to_representation(self, attachment):
+        data = super().to_representation(attachment)
+        data["name"] = attachment.name or os.path.basename(attachment.file.name)
+        return data
+
+    # A new name keeps the extension of the file, so a document never loses its type by renaming it.
+    def validate_name(self, value):
+        name = os.path.basename(value.replace("\\", "/")).strip()
+        if not name:
+            raise serializers.ValidationError("name_required")
+        if self.instance is not None:
+            current = self.instance.name or os.path.basename(self.instance.file.name)
+            extension = os.path.splitext(current)[1]
+            if extension and not name.lower().endswith(extension.lower()):
+                name += extension
+        return name[:255]
 
     # The messages are codes; the frontend translates them.
     def validate_file(self, f):

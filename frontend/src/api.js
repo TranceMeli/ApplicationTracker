@@ -53,6 +53,7 @@ export const api = {
     }
     return res.json()
   },
+  renameAttachment: (id, name) => request(`${FILES}${id}/`, { method: 'PATCH', body: JSON.stringify({ name }) }),
   removeAttachment: (id) => request(`${FILES}${id}/`, { method: 'DELETE' }),
 
   async importList(file, dryRun, defaultStatus, mode = 'update') {

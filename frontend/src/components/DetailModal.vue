@@ -6,8 +6,10 @@ import { KIND_KEYS, STATUS_KEYS, fmt, isDue, today } from '../constants'
 import { detailSections, settings } from '../fields'
 import { locale, t } from '../i18n'
 import { askConfirm } from '../confirm'
+import { showToast } from '../toast'
 import { kindClass, kindName } from '../kind'
 import CompanyLogo from './CompanyLogo.vue'
+import DocumentViewer from './DocumentViewer.vue'
 import Icon from './Icon.vue'
 
 const props = defineProps({
@@ -198,12 +200,12 @@ async function removeNote(e) {
 
 // ---------- attachments ----------
 const kind = ref('cover_letter')
+const viewing = ref(-1) // index of the document shown in the viewer, -1 = closed
 const uploading = ref(false)
 const uploadError = ref('')
 
-async function upload(e) {
-  const files = [...e.target.files]
-  if (!files.length) return
+async function uploadFiles(files) {
+  if (!files.length || uploading.value) return
   uploading.value = true
   uploadError.value = ''
   try {
@@ -214,7 +216,117 @@ async function upload(e) {
     uploadError.value = known.includes(err.message) ? t(`attachment.error.${err.message}`) : err.message
   } finally {
     uploading.value = false
-    e.target.value = ''
+  }
+}
+
+async function upload(e) {
+  await uploadFiles([...e.target.files])
+  e.target.value = ''
+}
+
+// Files dropped anywhere on the dialog are attached, with the type chosen next to the upload button.
+const dropping = ref(false)
+let dragDepth = 0
+const hasFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files')
+
+function onDragEnter(e) {
+  if (!hasFiles(e)) return
+  dragDepth++
+  dropping.value = true
+}
+
+function onDragLeave(e) {
+  if (!hasFiles(e)) return
+  dragDepth = Math.max(0, dragDepth - 1)
+  if (!dragDepth) dropping.value = false
+}
+
+async function onDrop(e) {
+  if (!hasFiles(e)) return
+  dragDepth = 0
+  dropping.value = false
+  tab.value = 'files'
+  await uploadFiles([...e.dataTransfer.files])
+}
+
+// Files from the clipboard (copied in the file manager, a screenshot, an image from a mail) are attached with Ctrl+V.
+async function onPaste(e) {
+  if (viewing.value >= 0 || edit.value || renaming.value) return
+  const files = [...(e.clipboardData?.files ?? [])]
+  if (!files.length) return
+  e.preventDefault()
+  tab.value = 'files'
+  await uploadFiles(files)
+}
+
+// Copy a document: images go to the clipboard as an image, anything else as its address, because a browser
+// cannot put a PDF or Word file itself on the clipboard.
+async function toPng(blob) {
+  if (blob.type === 'image/png') return blob
+  const bitmap = await createImageBitmap(blob)
+  const canvas = document.createElement('canvas')
+  canvas.width = bitmap.width
+  canvas.height = bitmap.height
+  canvas.getContext('2d').drawImage(bitmap, 0, 0)
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('png'))), 'image/png'))
+}
+
+async function copyDoc(a) {
+  const path = new URL(a.file, window.location.origin).pathname
+  const isImage = ['png', 'jpg', 'jpeg'].includes((a.name.split('.').pop() || '').toLowerCase())
+  try {
+    if (isImage) {
+      const png = await toPng(await (await fetch(path)).blob())
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': png })])
+      showToast(t('attachment.copiedImage'), { ms: 3000 })
+    } else {
+      await navigator.clipboard.writeText(window.location.origin + path)
+      showToast(t('attachment.copiedLink'), { ms: 4000 })
+    }
+  } catch {
+    showToast(t('attachment.copyFailed'), { ms: 4000 })
+  }
+}
+
+// A document can be dragged out of the list into a mail or onto the desktop (Chrome and Edge hand the file over).
+const MIME = {
+  pdf: 'application/pdf',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  txt: 'text/plain',
+  doc: 'application/msword',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  odt: 'application/vnd.oasis.opendocument.text',
+}
+
+function dragOut(e, a) {
+  const address = window.location.origin + new URL(a.file, window.location.origin).pathname // the page's own address, whatever host the API reports
+  const type = MIME[(a.name.split('.').pop() || '').toLowerCase()] ?? 'application/octet-stream'
+  e.dataTransfer.effectAllowed = 'copy'
+  e.dataTransfer.setData('DownloadURL', `${type}:${a.name.replaceAll(':', '-')}:${address}`)
+  e.dataTransfer.setData('text/uri-list', address)
+}
+
+// Renaming a document: the pencil turns its name into an input.
+const renaming = ref(null) // { id, name }
+
+function startRename(a) {
+  uploadError.value = ''
+  renaming.value = { id: a.id, name: a.name }
+}
+
+async function saveRename() {
+  const r = renaming.value
+  if (!r) return
+  renaming.value = null
+  const current = props.item.attachments.find((a) => a.id === r.id)
+  if (!current || !r.name.trim() || r.name.trim() === current.name) return
+  try {
+    await api.renameAttachment(r.id, r.name.trim())
+    emit('changed')
+  } catch (err) {
+    uploadError.value = err.message
   }
 }
 
@@ -241,17 +353,33 @@ function onKey(e) {
   if (e.ctrlKey || e.metaKey || e.altKey || edit.value) return
   const target = e.target
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName) || target?.isContentEditable) return
-  if (document.querySelector('.overlay.confirm')) return
+  if (document.querySelector('.overlay.confirm') || viewing.value >= 0) return
   if (e.key === 'ArrowLeft' || e.key === 'k') { e.preventDefault(); emit('prev') }
   else if (e.key === 'ArrowRight' || e.key === 'j') { e.preventDefault(); emit('next') }
 }
-onMounted(() => window.addEventListener('keydown', onKey))
-onUnmounted(() => window.removeEventListener('keydown', onKey))
+onMounted(() => {
+  window.addEventListener('keydown', onKey)
+  window.addEventListener('paste', onPaste)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKey)
+  window.removeEventListener('paste', onPaste)
+})
 </script>
 
 <template>
   <div class="overlay" v-backdrop-close="() => $emit('close')">
-    <section class="dialog detail" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+    <section
+      class="dialog detail"
+      :class="{ dropping }"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="detail-title"
+      @dragenter.prevent="onDragEnter"
+      @dragover.prevent
+      @dragleave="onDragLeave"
+      @drop.prevent="onDrop"
+    >
       <header class="detail-head">
         <CompanyLogo :item="item" large always />
         <div class="head-main">
@@ -396,13 +524,31 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 
       <div v-else class="panel" role="tabpanel">
         <ul v-if="item.attachments?.length" class="files">
-          <li v-for="a in item.attachments" :key="a.id">
-            <a :href="a.file" target="_blank" rel="noopener">{{ a.name }}</a>
+          <li v-for="a in item.attachments" :key="a.id" :draggable="renaming?.id !== a.id" @dragstart="dragOut($event, a)">
+            <input
+              v-if="renaming?.id === a.id"
+              v-model="renaming.name"
+              class="doc-name"
+              type="text"
+              :aria-label="t('attachment.rename')"
+              autofocus
+              @vue:mounted="(vnode) => { vnode.el.focus(); vnode.el.select() }"
+              @keydown.enter.prevent="saveRename"
+              @keydown.esc.stop="renaming = null"
+              @blur="saveRename"
+            />
+            <template v-else>
+              <button type="button" class="doc-open" :title="t('viewer.open')" @click="viewing = item.attachments.indexOf(a)" @keydown.ctrl.c.exact="copyDoc(a)" @keydown.meta.c.exact="copyDoc(a)">{{ a.name }}</button>
+              <button type="button" class="doc-rename" :aria-label="t('attachment.renameFile', { name: a.name })" :title="t('attachment.rename')" @click="startRename(a)">✎</button>
+              <button type="button" class="doc-rename" :aria-label="t('attachment.copyFile', { name: a.name })" :title="t('attachment.copy')" @click="copyDoc(a)">⧉</button>
+            </template>
+            <a class="doc-download" :href="a.file" :download="a.name" :aria-label="t('viewer.downloadFile', { name: a.name })" :title="t('viewer.download')">↓</a>
             <span class="sub">{{ t(`kind.${a.kind}`) }} · {{ fmt(a.uploaded_at) }}</span>
             <button :aria-label="t('btn.delete')" @click="removeFile(a)">×</button>
           </li>
         </ul>
         <p v-else class="sub">{{ t('attachment.none') }}</p>
+        <p v-if="item.attachments?.length" class="sub drag-hint">{{ t('attachment.dragHint') }}</p>
 
         <div class="upload">
           <select v-model="kind" :aria-label="t('attachment.title')">
@@ -421,6 +567,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         </div>
         <p v-if="uploadError" class="error">{{ uploadError }}</p>
       </div>
+
+      <DocumentViewer v-if="viewing >= 0 && item.attachments?.[viewing]" v-model:index="viewing" :files="item.attachments" @close="viewing = -1" />
+
+      <div v-if="dropping" class="drop-note">{{ t('attachment.dropHere') }}</div>
 
       <footer class="detail-foot">
         <span class="sub">{{ updatedText }}</span>

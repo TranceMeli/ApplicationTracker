@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { SENT_STATUSES, STATUS_KEYS, daysBetween } from '../constants'
 import { comboLabel, kindIndex, knownKinds } from '../kind'
 import { t } from '../i18n'
+import SankeyChart from './SankeyChart.vue'
 
 const props = defineProps({ items: Array, due: Array })
 
@@ -82,6 +83,39 @@ const combos = computed(() => {
   return list.map((c) => ({ ...c, label: comboLabel(c.status, c.kind), color: `var(--kt${kindIndex(c.kind)})`, width: Math.round((c.n / max) * 100) }))
 })
 
+// The path of the applications that were sent (planned and unsure ones are not part of it): answered or not, then the outcome.
+const flow = computed(() => {
+  const sentN = sent.value.length
+  const answeredN = answered.value.length
+  const rejected = sent.value.filter((i) => i.status === 'rejected').length
+  const interview = sent.value.filter((i) => i.status === 'interview').length
+  const offer = sent.value.filter((i) => i.status === 'offer').length
+  const undecided = answeredN - rejected - interview - offer
+  return {
+    columns: [
+      [{ id: 'sent', label: t('stats.sent'), value: sentN, color: 'var(--applied)' }],
+      [
+        { id: 'noAnswer', label: t('stats.flowNoAnswer'), value: sentN - answeredN, color: 'var(--faint)' },
+        { id: 'answered', label: t('stats.answered'), value: answeredN, color: 'var(--applied)' },
+      ],
+      [
+        { id: 'rejected', label: t('status.rejected'), value: rejected, color: 'var(--danger)' },
+        { id: 'interview', label: t('status.interview'), value: interview, color: 'var(--interview)' },
+        { id: 'offer', label: t('status.offer'), value: offer, color: 'var(--offer)' },
+        { id: 'undecided', label: t('stats.flowUndecided'), value: undecided, color: 'var(--faint)' },
+      ],
+    ],
+    links: [
+      { from: 'sent', to: 'noAnswer', value: sentN - answeredN },
+      { from: 'sent', to: 'answered', value: answeredN },
+      { from: 'answered', to: 'rejected', value: rejected },
+      { from: 'answered', to: 'interview', value: interview },
+      { from: 'answered', to: 'offer', value: offer },
+      { from: 'answered', to: 'undecided', value: undecided },
+    ],
+  }
+})
+
 const short = (isoDate) => isoDate.slice(8, 10) + '.' + isoDate.slice(5, 7) + '.'
 </script>
 
@@ -104,6 +138,9 @@ const short = (isoDate) => isoDate.slice(8, 10) + '.' + isoDate.slice(5, 7) + '.
           <span class="week-label">{{ short(w.start) }}</span>
         </div>
       </div>
+
+      <h2>{{ t('stats.flow') }}</h2>
+      <SankeyChart :columns="flow.columns" :links="flow.links" :label="t('stats.flow')" />
 
       <h2>{{ t('stats.funnel') }}</h2>
       <div class="funnel">
