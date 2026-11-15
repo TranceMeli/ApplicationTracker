@@ -406,6 +406,8 @@ class KindTests(TestCase):
         self.assertEqual(patch("  Stelle "), "posting")
         self.assertEqual(patch("Job posting"), "posting")
         self.assertEqual(patch("initiativ"), "initiative")
+        self.assertEqual(patch(" Vermittler "), "agency")
+        self.assertEqual(patch("Recruiter"), "agency")
         self.assertEqual(patch("Empfehlung   durch  Kollegen"), "Empfehlung durch Kollegen")
         self.assertEqual(patch(""), "")
 

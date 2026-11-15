@@ -39,3 +39,7 @@ dist/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Browser tests
+frontend/test-results/
+frontend/playwright-report/

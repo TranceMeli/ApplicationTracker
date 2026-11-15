@@ -18,6 +18,7 @@ const backend = backendUrl()
 
 export default defineConfig({
   plugins: [vue()],
+  test: { environment: 'jsdom', include: ['tests/**/*.test.js'] },
   server: {
     proxy: {
       '/api': backend,

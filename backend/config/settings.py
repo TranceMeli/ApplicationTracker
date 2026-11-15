@@ -10,10 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Where the database, the uploads and the backups live. The browser tests set TRACKER_DATA_DIR to a throw-away
+# folder, so that they never touch the real data.
+DATA_DIR = Path(os.environ.get('TRACKER_DATA_DIR', BASE_DIR))
 
 
 # Quick-start development settings - unsuitable for production
@@ -79,7 +84,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': DATA_DIR / 'db.sqlite3',
     }
 }
 
@@ -134,7 +139,8 @@ MAILERS = {
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = DATA_DIR / 'media'
+BACKUP_DIR = DATA_DIR / 'backups'
 
 # The app has no user accounts. Without session authentication, a login to the Django
 # admin (same host, other port) does not make DRF demand a CSRF token for API calls.

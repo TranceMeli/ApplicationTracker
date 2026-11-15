@@ -4,12 +4,26 @@ import { OPEN_STATUSES } from './status'
 const escapeText = (text) =>
   String(text).replaceAll('\\', '\\\\').replaceAll(';', '\\;').replaceAll(',', '\\,').replace(/\r?\n/g, '\\n')
 
-// Lines are limited to 75 characters, longer ones continue on the next line after a space.
-// The limit counts bytes, so the chunks are kept short enough for umlauts and other multi-byte letters.
+// Lines are limited to 75 bytes, longer ones continue on the next line after a space. The limit counts bytes
+// (UTF-8), not characters, so umlauts count twice. A character is never split.
+const bytes = (char) => new TextEncoder().encode(char).length
+
 function fold(line) {
-  const chunks = [line.slice(0, 60)]
-  for (let i = 60; i < line.length; i += 59) chunks.push(` ${line.slice(i, i + 59)}`)
-  return chunks.join('\r\n')
+  const chunks = []
+  let current = ''
+  let size = 0
+  for (const char of line) {
+    const limit = chunks.length ? 74 : 75 // continuation lines start with a space
+    if (size + bytes(char) > limit) {
+      chunks.push(current)
+      current = ''
+      size = 0
+    }
+    current += char
+    size += bytes(char)
+  }
+  chunks.push(current)
+  return chunks.map((chunk, i) => (i ? ' ' + chunk : chunk)).join('\r\n')
 }
 
 const compact = (isoDate) => isoDate.replaceAll('-', '')
