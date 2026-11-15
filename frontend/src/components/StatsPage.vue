@@ -19,10 +19,21 @@ const offers = computed(() => sent.value.filter((i) => i.status === 'offer'))
 
 const rate = computed(() => (sent.value.length ? Math.round((answered.value.length / sent.value.length) * 100) : null))
 
+// The day of the answer: the response date if there is one, otherwise the first logged change to an interview,
+// rejection or offer, so the average also works when nobody typed in the response date.
+const answerDate = (i) => {
+  if (i.response_date) return i.response_date
+  const dates = (i.events ?? [])
+    .filter((e) => e.kind === 'status' && ['interview', 'rejected', 'offer'].includes(e.status))
+    .map((e) => e.date)
+    .sort()
+  return dates[0] ?? null
+}
+
 const avgDays = computed(() => {
-  const spans = props.items
-    .filter((i) => i.date && i.response_date)
-    .map((i) => daysBetween(i.date, i.response_date))
+  const spans = sent.value
+    .filter((i) => i.date && answerDate(i))
+    .map((i) => daysBetween(i.date, answerDate(i)))
     .filter((n) => n >= 0)
   return spans.length ? Math.round(spans.reduce((a, b) => a + b, 0) / spans.length) : null
 })
@@ -122,7 +133,7 @@ const short = (isoDate) => isoDate.slice(8, 10) + '.' + isoDate.slice(5, 7) + '.
 <template>
   <section class="stats">
     <div class="tiles">
-      <div class="tile"><strong>{{ items.length }}</strong><span>{{ t('stats.total') }}</span></div>
+      <div class="tile"><strong>{{ sent.length }}</strong><span>{{ t('stats.total') }}</span></div>
       <div class="tile"><strong>{{ rate === null ? t('stats.none') : `${rate} %` }}</strong><span>{{ t('stats.rate') }}</span></div>
       <div class="tile"><strong>{{ avgDays === null ? t('stats.none') : avgDays }}</strong><span>{{ t('stats.avgDays') }}</span></div>
       <div class="tile" :class="{ warn: due.length }"><strong>{{ due.length }}</strong><span>{{ t('stats.due') }}</span></div>

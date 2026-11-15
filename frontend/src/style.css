@@ -49,7 +49,7 @@
   /* application types: rose for "Stelle", teal for "Initiativ", the other four for types the user adds */
   --kt0: #A63A78; --kt0-soft: #FAE6F0; --kt0-ink: #7A2A55;
   --kt1: #0E7C87; --kt1-soft: #DDF3F5; --kt1-ink: #0B5F68;
-  --kt2: #6B8512; --kt2-soft: #EDF3D3; --kt2-ink: #4B5C10;
+  --kt2: #6B8512; --kt2-soft: #EDF3D3; --kt2-ink: #4B5C10; /* Vermittler */
   --kt3: #A0612F; --kt3-soft: #F6E7DB; --kt3-ink: #6E3F18;
   --kt4: #4558B8; --kt4-soft: #E5E8F7; --kt4-ink: #2F3D8A;
   --kt5: #5F7A8A; --kt5-soft: #E4ECF0; --kt5-ink: #34474F;
@@ -356,7 +356,7 @@ tbody tr.group-row:hover td { background: var(--tint); }
 .tile.warn { border-color: var(--interview); box-shadow: inset 4px 0 0 var(--interview); }
 .week-chart { display: grid; grid-template-columns: repeat(8, 1fr); gap: .5rem; align-items: end; height: 11rem; background: var(--surface); border: 1px solid var(--line); padding: .75rem; }
 .week { display: grid; grid-template-rows: auto 1fr auto; justify-items: center; height: 100%; gap: .2rem; min-width: 0; }
-.week-bar { align-self: end; width: 100%; background: var(--green); min-height: 2px; }
+.week-bar { align-self: end; width: 100%; background: var(--applied); min-height: 2px; }
 .week-bar.zero { background: var(--line); }
 .week-n { font-size: var(--fs-12); font-weight: 600; }
 .week-label { font-size: var(--fs-12); color: var(--mid); }

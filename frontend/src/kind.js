@@ -1,7 +1,7 @@
 import { t } from './i18n'
 import { BUILTIN_KINDS } from './status'
 
-// The type of an application is free text. "posting" (Stelle) and "initiative" (Initiativ) are built in and
+// The type of an application is free text. "posting" (Stelle), "initiative" (Initiativ) and "agency" (Vermittler) are built in and
 // translated, every other type is shown as it was typed.
 export const isBuiltin = (kind) => BUILTIN_KINDS.includes(kind)
 export const kindName = (kind) => (isBuiltin(kind) ? t(`apptype.${kind}`) : kind || '')
@@ -10,7 +10,7 @@ export const kindLabel = (item) => kindName(item.kind)
 // For example "Geplant - Initiativ" or "Beworben - Stelle".
 export const comboLabel = (status, kind) => `${t(`status.${status}`)} - ${kindName(kind)}`
 
-// Six colors: rose for "Stelle", teal for "Initiativ", the other four are picked from the name of any other type,
+// Six colors: rose for "Stelle", teal for "Initiativ", olive for "Vermittler", the other three are picked from the name of any other type,
 // so a type always has the same color.
 const COLORS = 6
 const hash = (text) => [...text].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
@@ -18,7 +18,8 @@ const hash = (text) => [...text].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>>
 export function kindIndex(kind) {
   if (kind === 'posting') return 0
   if (kind === 'initiative') return 1
-  return 2 + (hash((kind || '').toLowerCase()) % (COLORS - 2))
+  if (kind === 'agency') return 2
+  return 3 + (hash((kind || '').toLowerCase()) % (COLORS - 3))
 }
 
 export const kindClass = (kind) => (kind ? `kt-${kindIndex(kind)}` : '')

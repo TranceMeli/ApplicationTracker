@@ -47,7 +47,7 @@ class Application(models.Model):
     follow_up = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     is_favorite = models.BooleanField(default=False)
-    # Empty until chosen. "posting" (Stelle) and "initiative" (Initiativ) are the built-in values with a translated
+    # Empty until chosen. "posting" (Stelle), "initiative" (Initiativ) and "agency" (Vermittler) are the built-in values with a translated
     # name; any other text that is stored (for example from an import) is shown as it is.
     kind = models.CharField(max_length=40, blank=True, default="")
     tags = models.CharField(max_length=300, blank=True)  # comma separated, e.g. "Remote, Wunschfirma"

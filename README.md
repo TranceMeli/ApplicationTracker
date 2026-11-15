@@ -43,7 +43,7 @@ This project is under active development. Features and the data model may still 
 
 - Track applications with company, position, contact person, dates, status, notes and more
 - Status workflow: planned, unsure, applied, interview, rejected, offer
-- Type per application, chosen from a menu in addition to the status and empty until set: "Stelle" (answer to a job posting, rose) or "Initiativ" (unsolicited, teal). Together with the status this gives combinations such as Planned - Initiativ or Applied - Stelle; there are filter chips for each type and for applications without one, a column in the table, a badge on the cards and the board, and a bulk change
+- Type per application, chosen from a menu in addition to the status and empty until set: "Stelle" (answer to a job posting, rose), "Initiativ" (unsolicited, teal) or "Vermittler" (through an agency or recruiter such as Ferchau, olive). Together with the status this gives combinations such as Planned - Initiativ or Applied - Stelle; there are filter chips for each type and for applications without one, a column in the table, a badge on the cards and the board, and a bulk change
 - Favorites with a star marker and a favorites filter
 - Compact toolbar: live search (company, position, contact person, email, phone, city, notes; the slash key jumps to it), status segments with counters and a Filter menu for the type, tags, favorites, due follow-ups and grouping; the active filters stay visible as chips that can be removed one by one
 - Status shown by color, icon and text (never by color alone): the same badges in the table, on the cards, on the board and as pins on the map
@@ -237,12 +237,32 @@ Restart the dev server after changes to `vite.config.js`.
 
 ### Tests
 
+An overview of all tests and how to run them is in [TESTING.md](TESTING.md).
+
 ```bash
 cd backend
 python manage.py test
 ```
 
 The tests cover the API (search, ordering, file cleanup), attachment uploads and renaming, and the import.
+
+The frontend logic (types and colours, field settings, CSV and calendar export, links and logos, distances, dates, translations) is tested with Vitest:
+
+```bash
+cd frontend
+npm test
+```
+
+The translation test also fails when a text exists in only one language.
+
+The browser tests drive the real app in Microsoft Edge (list, search, quick add, history, delete and undo, bulk actions, board, documents with viewer, rename, paste, drop and copy, statistics with the Sankey diagram, CSV, calendar, backup, import, field settings, dark mode, language, phone width):
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+They start their own backend (port 8021) and frontend (port 5190) with a throw-away database and upload folder in the temporary folder, so your real data is never touched. Set `E2E_BROWSER=chromium` after `npx playwright install chromium` to use the bundled browser instead of Edge.
 
 ## Usage
 
@@ -256,7 +276,7 @@ The tests cover the API (search, ordering, file cleanup), attachment uploads and
 - **Import:** open Import, download the template if needed, choose a file and review the dry-run preview before importing. Supported formats are `.csv`, `.tsv`, `.txt`, `.xlsx`, `.xlsm`, `.ods` and `.json`, up to 5 MB. German and English column names are recognized; unknown columns are shown as ignored. Choose whether to add new companies and update existing applications or import new companies only. Existing companies are matched case-insensitively after whitespace normalization. In update mode, non-empty imported values update the oldest matching application; empty cells do not erase saved data. Repeated companies in the same file are counted as duplicates.
 - **Export:** Export as CSV in the Data menu downloads all applications as a CSV file (semicolon separated, UTF-8 with BOM, opens directly in Excel and LibreOffice). The file uses the same columns as the import template.
 - **Reminders, sorting and grouping:** the banner above the list names the follow-ups that are due; Show narrows the list to them. Click a column header to sort (again for descending, a third time to reset). Group by company puts applications of the same company together under a header.
-- **Type:** the Art menu in the form starts empty; choose Stelle or Initiativ when it applies. The type is a badge in the list, on the cards and on the board (nothing is shown while it is empty). Next to the status chips there is a chip for each type and one for Ohne Art, so Planned plus Initiativ can be combined, or all applications that still need a type can be listed. In the bulk bar, pick a type or Art entfernen for the selected applications. Types that are stored in the data in other words (for example from an import) stay selectable and get their own color.
+- **Type:** the Art menu in the form starts empty; choose Stelle, Initiativ or Vermittler when it applies (entries typed as Vermittler, Recruiter or similar become the built-in type). The type is a badge in the list, on the cards and on the board (nothing is shown while it is empty). Next to the status chips there is a chip for each type and one for Ohne Art, so Planned plus Initiativ can be combined, or all applications that still need a type can be listed. In the bulk bar, pick a type or Art entfernen for the selected applications. Types that are stored in the data in other words (for example from an import) stay selectable and get their own color.
 - **Several at once:** tick the boxes in the first column; a bar offers a status change, a type, Delete and Clear selection. Every delete can be undone from the message that appears at the bottom.
 - **History and tags:** the detail view shows the history with the status changes and lets you add notes. Tags are entered comma separated in the form and can be used as a filter.
 - **Board:** drag a card to another column to change the status, or use the status menu on the card.

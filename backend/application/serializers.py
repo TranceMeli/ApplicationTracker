@@ -63,6 +63,8 @@ KIND_ALIASES = {
     "posting": "posting", "stelle": "posting", "job posting": "posting", "stellenanzeige": "posting",
     "initiative": "initiative", "initiativ": "initiative", "initiativbewerbung": "initiative",
     "unsolicited": "initiative", "speculative": "initiative",
+    "agency": "agency", "vermittler": "agency", "vermittlung": "agency", "personalvermittler": "agency",
+    "personalvermittlung": "agency", "personaldienstleister": "agency", "recruiter": "agency", "recruiting": "agency",
 }
 
 
