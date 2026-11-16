@@ -194,7 +194,7 @@ function discard() {
       </div>
 
       <p v-if="error" class="error">{{ error }}</p>
-      <div class="quick-actions">
+      <div class="quick-actions" @mousedown.prevent>
         <button type="button" class="link" @click="$emit('expand', data())">{{ t('quick.moreFields') }}</button>
         <span class="buttons">
           <button type="button" @click="request">{{ t('btn.cancel') }}</button>

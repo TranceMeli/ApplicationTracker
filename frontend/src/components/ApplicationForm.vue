@@ -105,7 +105,7 @@ function discard() {
 
       <label class="wide check"><input v-model="form.is_favorite" type="checkbox" /> {{ t('field.favoriteMark') }}</label>
       <p v-if="error" class="error wide">{{ error }}</p>
-      <div class="buttons">
+      <div class="buttons" @mousedown.prevent>
         <button type="button" @click="request">{{ t('btn.cancel') }}</button>
         <button class="primary" type="submit">{{ t('btn.save') }}</button>
       </div>
