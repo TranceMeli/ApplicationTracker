@@ -285,9 +285,6 @@ select.badge option { background: var(--surface); color: var(--ink); font-weight
 .fab { display: none; }
 
 /* ---- follow up banner ---- */
-.due-banner { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .9rem; margin: 0 0 1rem; padding: .6rem .9rem; background: var(--interview-soft); border: 1px solid var(--interview); box-shadow: inset 4px 0 0 var(--interview); color: var(--interview-ink); }
-.due-names { overflow-wrap: anywhere; }
-.due-banner button.link { color: var(--interview-ink); margin-left: auto; font-weight: 600; }
 
 /* ---- filters: chip row, tag select ---- */
 
@@ -680,3 +677,30 @@ select.kind-select { width: auto; font-size: var(--fs-14); font-weight: 600; pad
 .dialog.detail { position: relative; }
 .drop-note { position: absolute; inset: 0; z-index: 5; display: grid; place-content: center; background: color-mix(in srgb, var(--surface) 88%, transparent); font-weight: 600; font-size: var(--fs-18); pointer-events: none; }
 .dialog.detail.dropping { outline: 3px dashed var(--focus); outline-offset: -8px; }
+/* Today panel */
+.today { background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--lime-500, var(--yellow)); margin: 0 0 1.25rem; padding: .75rem 1rem 1rem; }
+.today-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+.today-head h2 { margin: 0; font-size: var(--fs-18, 1.1rem); }
+.today-head h2 .sub { font-weight: 400; margin-left: .5rem; font-size: var(--fs-14); }
+.today-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+.today-card { border: 1px solid var(--line); padding: .6rem .8rem; display: flex; flex-direction: column; gap: .4rem; }
+.today-card.due { background: var(--interview-soft); border-color: var(--interview); color: var(--interview-ink); }
+.today-card h3 { margin: 0; font-size: var(--fs-14); display: flex; align-items: center; gap: .4rem; }
+.today-card ul { list-style: none; margin: 0; padding: 0; flex: 1; }
+.today-card li { display: flex; justify-content: space-between; gap: .75rem; align-items: baseline; padding: .1rem 0; }
+.today-card li span { font-size: var(--fs-14); }
+.today-card button:not(.link) { align-self: flex-start; }
+.today-done { display: flex; align-items: center; gap: .5rem; margin: 0; color: var(--mid); }
+
+/* messages at a field, draft note, protection against losing entries, skip link, result count */
+.field-error { color: var(--danger-ink); font-weight: 600; font-size: var(--fs-14); }
+label.invalid input, label.invalid select, label.invalid textarea, input[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.draft-note { margin: .5rem 0 0; color: var(--mid); font-size: var(--fs-12); }
+.guard { margin-top: .9rem; padding: .7rem .9rem; background: var(--interview-soft); border: 1px solid var(--interview); box-shadow: inset 4px 0 0 var(--interview); color: var(--interview-ink); }
+.guard p { margin: .15rem 0 .6rem; }
+.guard-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.guard-actions button.danger, .guard-actions button.danger:hover { background: var(--surface); color: var(--danger-ink); border-color: var(--danger); }
+.skip-link { position: absolute; left: .5rem; top: -4rem; z-index: 2000; padding: .5rem 1rem; background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; }
+.skip-link:focus { top: .5rem; }
+main:focus { outline: none; }
+.result-count { margin-left: auto; color: var(--mid); font-size: var(--fs-14); }

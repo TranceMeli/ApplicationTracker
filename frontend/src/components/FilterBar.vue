@@ -6,7 +6,7 @@ import { kindClass, kindName, knownKinds } from '../kind'
 import MenuButton from './MenuButton.vue'
 import Icon from './Icon.vue'
 
-const props = defineProps({ stats: Object, total: Number, showGroup: Boolean })
+const props = defineProps({ stats: Object, total: Number, shown: Number, showGroup: Boolean })
 const search = defineModel('search')
 const status = defineModel('status')
 const favorite = defineModel('favorite')
@@ -14,6 +14,7 @@ const tag = defineModel('tag')
 const kind = defineModel('kind')
 const group = defineModel('group')
 const due = defineModel('due')
+const waiting = defineModel('waiting')
 
 const NONE = '__none__' // the server lists the applications without a type for this value
 const kinds = computed(() => knownKinds(props.stats.by_kind))
@@ -30,6 +31,7 @@ const activeChips = computed(() =>
     tag.value && { key: 'tag', text: t('filter.activeTag', { name: tag.value }), clear: () => (tag.value = '') },
     favorite.value && { key: 'favorite', text: t('filter.favoritesOnly'), clear: () => (favorite.value = false) },
     due.value && { key: 'due', text: t('filter.dueOnly'), clear: () => (due.value = false) },
+    waiting.value && { key: 'waiting', text: t('filter.waitingOnly'), clear: () => (waiting.value = false) },
   ].filter(Boolean),
 )
 
@@ -40,7 +42,11 @@ function reset() {
   tag.value = ''
   kind.value = ''
   due.value = false
+  waiting.value = false
 }
+
+// The row below the bar is there whenever the list is narrowed down, also by the search or a status.
+const narrowed = computed(() => !!(search.value || status.value || activeChips.value.length))
 
 // The slash key jumps to the search field, unless a field or a dialog has the focus already.
 const searchInput = ref(null)
@@ -137,12 +143,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
       </MenuButton>
     </div>
 
-    <div v-if="activeChips.length" class="active-filters">
+    <div v-if="narrowed" class="active-filters">
       <span v-for="chip in activeChips" :key="chip.key" class="filter-chip">
         {{ chip.text }}
         <button :aria-label="t('filter.remove', { name: chip.text })" @click="chip.clear">✕</button>
       </span>
       <button class="link" @click="reset">{{ t('filter.reset') }}</button>
+      <span class="result-count" role="status">{{ t('filter.count', { shown, total }) }}</span>
     </div>
   </nav>
 </template>

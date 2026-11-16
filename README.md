@@ -58,6 +58,10 @@ This project is under active development. Features and the data model may still 
 - Tags per application (comma separated, shown as chips, filter above the list); a warning appears in the form when the company already exists
 - Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view, and arrange the fields of the detail view in sections (reorder them, move fields between them, add sections of your own). Hidden fields are not deleted, their data stays stored and can be shown again at any time
 - Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
+- A Today panel above the list shows what needs attention: follow-ups that are due, upcoming interviews and applications that have waited more than 21 days for an answer. "Show all" narrows the list to them, and the panel can be hidden
+- Active filters stay visible as removable chips, and a counter shows how many of all applications match
+- Forms show errors right at the field with an example, links typed without `https://` are completed, entries that were not saved are protected (Cancel, Escape and a click on the backdrop ask first) and the quick dialog keeps a draft in the browser
+- Saving and status changes are confirmed in a short message, a status change can be undone, and a skip link brings keyboard users to the content
 - Document attachments per application (cover letter, CV, certificate, complete application, other); PDFs, images and text files open in a viewer dialog on top of the detail view (arrow keys switch between the documents, Escape closes only the viewer), other file types can be downloaded
 - Documents can be renamed (the file extension stays), files are attached by dragging them onto the detail view or pasting them with Ctrl+V (also screenshots), and a document can be dragged out of the list into an e-mail or onto the desktop (Chrome and Edge); the copy button puts an image on the clipboard as an image and any other file as its address, because browsers cannot copy a PDF or Word file itself
 - List, card, board and map views for applications; the board shows one column per status and moves an application when its card is dragged to another column
@@ -255,7 +259,7 @@ npm test
 
 The translation test also fails when a text exists in only one language.
 
-The browser tests drive the real app in Microsoft Edge (list, search, quick add, history, delete and undo, bulk actions, board, documents with viewer, rename, paste, drop and copy, statistics with the Sankey diagram, CSV, calendar, backup, import, field settings, dark mode, language, phone width):
+The browser tests drive the real app in Microsoft Edge (Today panel, validation and unsaved entries, list, search, quick add, history, delete and undo, bulk actions, board, documents with viewer, rename, paste, drop and copy, statistics with the Sankey diagram, CSV, calendar, backup, import, field settings, dark mode, language, phone width):
 
 ```bash
 cd frontend

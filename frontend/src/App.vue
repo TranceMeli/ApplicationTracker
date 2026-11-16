@@ -7,6 +7,8 @@ import { askConfirm, confirmState } from './confirm'
 import { downloadApplications, downloadCalendar } from './exporter'
 import { VIEWS, loadView, saveView } from './geo'
 import { showToast } from './toast'
+import { clearDraft } from './draft'
+import { buildToday } from './today'
 import { knownKinds } from './kind'
 import { theme, themeChoice, toggleTheme } from './theme'
 import FilterBar from './components/FilterBar.vue'
@@ -25,6 +27,7 @@ import BulkBar from './components/BulkBar.vue'
 import ToastBar from './components/ToastBar.vue'
 import MenuButton from './components/MenuButton.vue'
 import QuickAddDialog from './components/QuickAddDialog.vue'
+import TodayPanel from './components/TodayPanel.vue'
 import Icon from './components/Icon.vue'
 
 // The map library is only loaded when the map view is opened.
@@ -48,6 +51,7 @@ const tagFilter = ref('')
 const kindFilter = ref('')
 const groupByCompany = ref(readGroup())
 const dueOnly = ref(false)
+const waitingOnly = ref(false)
 const selected = ref([])
 const backendDown = ref(false)
 const loaded = ref(false) // false until the first answer (or failure) of the backend, shows the placeholder
@@ -70,17 +74,24 @@ const detail = computed(
   () => items.value.find((i) => i.id === detailId.value) || (pinned.value?.id === detailId.value ? pinned.value : null),
 )
 const error = computed(() => (backendDown.value ? t('app.backendDown') : errorText.value))
-const hasFilters = computed(() => !!(search.value || statusFilter.value || favoriteOnly.value || tagFilter.value || kindFilter.value || dueOnly.value))
+const hasFilters = computed(() => !!(search.value || statusFilter.value || favoriteOnly.value || tagFilter.value || kindFilter.value || dueOnly.value || waitingOnly.value))
 
 // Oldest first, so the numbers run 1, 2, 3 ... in the order the entries were created.
 const sortedItems = computed(() => [...items.value].sort((a, b) => a.id - b.id))
 const detailNumber = computed(() => sortedItems.value.findIndex((i) => i.id === detailId.value) + 1)
 
-// "Show due follow ups" narrows the list to the applications named in the banner.
+// The applications that have waited a long time for an answer, see the Today panel.
+const waitingIds = computed(() => new Set(buildToday(items.value, due.value).waiting.map((w) => w.id)))
+
+// "Show all" in the Today panel narrows the list to the due follow ups or to the applications that wait for an answer.
 const visibleItems = computed(() => {
-  if (!dueOnly.value) return sortedItems.value
-  const ids = new Set(due.value.map((d) => d.id))
-  return sortedItems.value.filter((i) => ids.has(i.id))
+  let list = sortedItems.value
+  if (dueOnly.value) {
+    const ids = new Set(due.value.map((d) => d.id))
+    list = list.filter((i) => ids.has(i.id))
+  }
+  if (waitingOnly.value) list = list.filter((i) => waitingIds.value.has(i.id))
+  return list
 })
 
 const detailIndex = computed(() => visibleItems.value.findIndex((i) => i.id === detailId.value))
@@ -108,6 +119,7 @@ async function load() {
     stats.value = counts
     selected.value = selected.value.filter((sid) => list.some((i) => i.id === sid))
     if (!counts.due?.length) dueOnly.value = false
+    if (waitingOnly.value && !waitingIds.value.size) waitingOnly.value = false
     if (tagFilter.value && !(tagFilter.value in (counts.tags ?? {}))) tagFilter.value = ''
     backendDown.value = false
     errorText.value = ''
@@ -131,7 +143,10 @@ async function mutate(operation) {
 
 async function save(id, data) {
   const saved = await mutate(() => id ? api.update(id, data) : api.create(data))
-  if (saved) closeForm()
+  if (!saved) return
+  if (!id) clearDraft()
+  closeForm()
+  showToast(t(id ? 'toast.saved' : 'toast.added', { name: data.company }), { ms: 4000 })
 }
 
 // The detail view can change an application so that it drops out of the filtered list (a new status, for example).
@@ -144,7 +159,18 @@ async function updateItem(item, patch) {
   return updated
 }
 
-const changeStatus = (item, status) => updateItem(item, { status })
+async function changeStatus(item, status) {
+  const before = item.status
+  const updated = await updateItem(item, { status })
+  if (updated && before !== status) {
+    showToast(t('toast.status', { name: item.company, status: t(`status.${status}`) }), {
+      actionLabel: t('undo.action'),
+      onAction: () => updateItem(item, { status: before }),
+      ms: 6000,
+    })
+  }
+  return updated
+}
 const changeKind = (item, kind) => updateItem(item, { kind })
 const toggleFavorite = (item) => updateItem(item, { is_favorite: !item.is_favorite })
 
@@ -209,6 +235,7 @@ function clearFilters() {
   tagFilter.value = ''
   kindFilter.value = ''
   dueOnly.value = false
+  waitingOnly.value = false
 }
 
 function showAll() {
@@ -262,6 +289,11 @@ function editFromDetail() {
   detailId.value = null
 }
 
+// The skip link moves the focus to the content, a plain anchor would only scroll there.
+function focusMain() {
+  document.getElementById('main')?.focus()
+}
+
 function onKey(e) {
   if (e.key !== 'Escape' || confirmState.value) return // the confirm dialog handles its own Escape
   if (showImport.value) showImport.value = false
@@ -288,6 +320,7 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
 </script>
 
 <template>
+  <a href="#main" class="skip-link" @click.prevent="focusMain">{{ t('a11y.skip') }}</a>
   <header class="site-header">
     <div class="bar">
       <a href="#" class="brand" @click.prevent="showAll">{{ t('app.name') }}</a>
@@ -345,7 +378,7 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
     </div>
   </header>
 
-  <main>
+  <main id="main" tabindex="-1">
     <template v-if="page === 'stats'">
       <div class="page-head"><h1>{{ t('stats.title') }}</h1></div>
       <p v-if="error" class="error">{{ error }}</p>
@@ -366,11 +399,14 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
         </div>
       </div>
 
-      <div v-if="due.length" class="due-banner" role="status">
-        <strong>{{ t('due.banner', { n: due.length }) }}</strong>
-        <span class="due-names">{{ due.slice(0, 3).map((d) => d.company).join(' · ') }}{{ due.length > 3 ? ' …' : '' }}</span>
-        <button class="link" @click="dueOnly = !dueOnly">{{ dueOnly ? t('due.hide') : t('due.show') }}</button>
-      </div>
+      <TodayPanel
+        v-if="loaded && !hasFilters"
+        :items="items"
+        :due="due"
+        @open="(id) => (detailId = id)"
+        @show-due="dueOnly = true"
+        @show-waiting="waitingOnly = true"
+      />
 
       <FilterBar
         v-model:search="search"
@@ -380,8 +416,10 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
         v-model:kind="kindFilter"
         v-model:group="groupByCompany"
         v-model:due="dueOnly"
+        v-model:waiting="waitingOnly"
         :stats="stats"
         :total="total"
+        :shown="visibleItems.length"
         :show-group="view === 'list'"
       />
 

@@ -107,17 +107,4 @@ test.describe('list', () => {
     await page.locator('.bulk-bar select').first().selectOption('rejected')
     await expect.poll(async () => (await api.stats()).by_status.rejected).toBe(2)
   })
-
-  test('reminds of due follow-ups and filters them', async ({ page }) => {
-    await api.create({ company: 'Fällig', status: 'applied', follow_up: isoDay(-1) })
-    await api.create({ company: 'Später', status: 'applied', follow_up: isoDay(10) })
-    await page.goto('/')
-    const banner = page.locator('.due-banner')
-    await expect(banner).toContainText('1 Nachfass-Termin')
-    await banner.getByRole('button', { name: 'Anzeigen' }).click()
-    await expect(rows(page)).toHaveCount(1)
-    await expect(rowOf(page, 'Fällig')).toBeVisible()
-    await banner.getByRole('button', { name: 'Alle anzeigen' }).click()
-    await expect(rows(page)).toHaveCount(2)
-  })
 })
