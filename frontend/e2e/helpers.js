@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { test as base, expect } from '@playwright/test'
 
 export { expect }
-export const API = 'http://localhost:8021/api'
+export const API = `http://localhost:${process.env.E2E_API_PORT ?? 8021}/api`
 export const SAMPLE_PDF = new URL('./fixtures/sample.pdf', import.meta.url)
 
 const pdfBytes = () => readFileSync(SAMPLE_PDF)

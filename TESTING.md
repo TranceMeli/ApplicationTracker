@@ -4,9 +4,9 @@ The tracker has three layers of automated tests. Each layer catches a different 
 
 | Layer | Tool | Where | Tests | Runs against | Takes |
 |---|---|---|---|---|---|
-| Backend | Django `TestCase` | `backend/application/tests.py` | 38 | the API with a temporary test database | a few seconds |
-| Frontend logic | Vitest + jsdom | `frontend/tests/` | 52 | single functions, no browser | about 5 seconds |
-| Browser (end to end) | Playwright + Microsoft Edge | `frontend/e2e/` | 48 | the real app with its own backend and database | about 1 minute |
+| Backend | Django `TestCase` | `backend/application/tests.py` | 39 | the API with a temporary test database | a few seconds |
+| Frontend logic | Vitest + jsdom | `frontend/tests/` | 64 | single functions, no browser | about 5 seconds |
+| Browser (end to end) | Playwright + Microsoft Edge | `frontend/e2e/` | 53 | the real app with its own backend and database | about 1 minute |
 
 ## Quick start
 
@@ -56,7 +56,7 @@ The Django tests use Django's own temporary test database and a temporary media 
 
 | Test class | What it protects |
 |---|---|
-| `AttachmentApiTests` | Upload of documents including the type "complete application", validation of file type and size, renaming a document (the file extension stays, bad names are rejected), attachments are part of the application response. |
+| `AttachmentApiTests` | Upload of documents including the type "complete application", a name sent with the upload is kept and cleaned, validation of file type and size, renaming a document (the file extension stays, bad names are rejected), attachments are part of the application response. |
 | `ApplicationApiTests` | Search also finds the contact person, ordering by a relation is ignored (no leaking of other tables), files are removed with an application that is purged from the trash, the admin session works without a CSRF token. |
 | `ImportTests` | Duplicates are skipped without warnings, a dry run saves nothing, an update changes existing rows and resets stale coordinates. |
 | `LogoApiTests` | Invalid domains are rejected without a request, an icon is fetched once and then served from disk, a missing icon is remembered, an unreachable service is not remembered (so it is tried again later). |
@@ -83,6 +83,7 @@ These tests call plain functions from `frontend/src/` and compare the result wit
 | `today.test.js` | What the Today panel lists: due follow-ups with the days since, upcoming interviews in date order, applications that wait for an answer for more than 21 days (not those with an answer, an interview date or an already due follow-up). |
 | `validate.test.js` | The checks of the form fields: company required, links with or without `https://`, mail and phone links, e-mail addresses. |
 | `draft.test.js` | The draft of the quick dialog in the browser storage: save, load, clear, broken data. |
+| `inbox.test.js` | The inbox logic: the kind of document from words in the file name, the company found in the file name (ignoring case, umlauts and legal forms such as GmbH, the longer name and the newer application win), typed text matched to an existing company, the proposed name `Date_Company_Kind.ext` without characters that file systems reject, numbering of equal names, files that are not allowed or too large. |
 | `i18n.test.js` | Placeholders, fallback to the key, switching the language. One test compares German and English in the source and fails when a text exists in only one language. |
 
 ## Browser tests
@@ -96,6 +97,7 @@ Every test starts with an empty database, German, the light theme and the list v
 | `list.spec.js` | Search and "reset filters", the empty state, sorting in three steps, the quick add dialog with duplicate warning and the type "Vermittler", changing status and type in the detail dialog, the history with notes and the empty note error, deleting with confirmation and undo, bulk status change. |
 | `documents.spec.js` | Attaching a file with the chosen type, rejecting a file type that is not allowed, the viewer (PDF, text, Word without preview), switching with the arrow keys, Escape closing first the viewer and then the detail view, renaming with the extension kept and cancelling with Escape, pasting a screenshot with Ctrl+V from any tab, dropping a file on the detail view, copying an image as an image and a PDF as its address, deleting a document. |
 | `usability.spec.js` | The Today panel (due follow-ups, interviews, long waiting, narrowing the list from a card, hiding it for good), the result count with search and status, error messages at the field in the quick dialog and in the full form (also in a folded section), `https://` added to a typed link, the question before unsaved entries are thrown away (Cancel, Escape, backdrop, edit form), the draft of the quick dialog, confirmation of saving and of a status change with undo, the skip link, the announced result count. |
+| `inbox.spec.js` | Files dropped or pasted on the page open the inbox with the application, the kind and the name proposed, the page announces the drop, files are stored under the proposed names, a missing company is asked for at the field and can create a new application (status planned), "all files belong to", opening from the Daten menu and choosing files, not allowed files are shown and skipped, switching the automatic naming off (remembered) and editing a name keeps the extension, closing with waiting files asks first. |
 | `stats.spec.js` | The top tile counts only applications that were really sent, the response rate and the days until the answer (from the response date and, as a fallback, from the logged status change), the Sankey diagram uses only sent applications, the type counts including "Vermittler". |
 | `data.spec.js` | CSV export (with the byte order mark Excel needs), the calendar file, the backup zip, a CSV import that skips duplicates, hiding a table column in the field settings. |
 | `views.spec.js` | The board (drag and drop and the status select as the keyboard alternative), the remembered view, dark mode that survives a reload, switching to English, phone width without horizontal scrolling and with the floating add button, opening the detail view from the card view. |
@@ -118,5 +120,6 @@ Every test starts with an empty database, German, the light theme and the list v
 
 - Other browsers than Chromium (Edge) and other operating systems.
 - Dragging a document out of the app into an e-mail or onto the desktop. The browser starts that drag outside of the page, which tests cannot follow.
+- Whether the proposed company and kind are right for your own file names. The rules are covered with examples, but real names vary.
 - The map view (it needs the online map tiles and the address lookup) and the real logo service.
 - Visual details such as exact colours and spacing. The colour contrast was checked once by hand and with a script during the redesign, but it is not part of the test suite.

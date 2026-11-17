@@ -41,11 +41,12 @@ export const api = {
   remove: (id) => request(`${BASE}${id}/`, { method: 'DELETE' }),
 
   // File upload uses FormData, so no JSON Content-Type header here.
-  async upload(applicationId, file, kind) {
+  async upload(applicationId, file, kind, name) {
     const body = new FormData()
     body.append('application', applicationId)
     body.append('file', file)
     body.append('kind', kind)
+    if (name) body.append('name', name)
     const res = await fetch(FILES, { method: 'POST', body })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))

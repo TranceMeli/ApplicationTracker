@@ -43,7 +43,8 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         uploaded_file = validated_data["file"]
-        validated_data["name"] = os.path.basename(uploaded_file.name)
+        # A name sent along (the inbox proposes one) is kept, otherwise the file keeps the name it has.
+        validated_data["name"] = validated_data.get("name") or os.path.basename(uploaded_file.name)
         return super().create(validated_data)
 
 

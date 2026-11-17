@@ -704,3 +704,19 @@ label.invalid input, label.invalid select, label.invalid textarea, input[aria-in
 .skip-link:focus { top: .5rem; }
 main:focus { outline: none; }
 .result-count { margin-left: auto; color: var(--mid); font-size: var(--fs-14); }
+/* ---------- inbox ---------- */
+.dialog.inbox { width: min(760px, 100%); grid-template-columns: minmax(0, 1fr); }
+.inbox-drop { border: 2px dashed var(--border-ui); padding: 1rem; text-align: center; color: var(--mid); display: grid; gap: .5rem; justify-items: center; }
+.inbox-drop p { margin: 0; font-size: var(--fs-14); }
+.inbox-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.inbox-rows li { border: 1px solid var(--border-ui); padding: .6rem .75rem; display: grid; gap: .4rem; }
+.inbox-rows li.bad { border-color: var(--danger-ink); }
+.inbox-file { display: flex; justify-content: space-between; align-items: baseline; gap: .75rem; }
+.inbox-original { font-size: var(--fs-14); color: var(--mid); overflow-wrap: anywhere; }
+.inbox-fields { display: grid; grid-template-columns: 1fr 12rem; gap: .6rem; }
+.inbox-name input { font-family: ui-monospace, Consolas, monospace; font-size: var(--fs-14); }
+.inbox-new { margin: 0; font-size: var(--fs-14); color: var(--interview-ink); }
+.inbox-naming { font-size: var(--fs-14); }
+.page-drop { position: fixed; inset: 0; z-index: 1100; background: var(--overlay); display: grid; place-items: center; pointer-events: none; }
+.page-drop span { background: var(--surface); border: 2px dashed var(--green); padding: 1.5rem 2.5rem; font-size: var(--fs-18); font-weight: 600; }
+@media (max-width: 560px) { .inbox-fields { grid-template-columns: 1fr; } }

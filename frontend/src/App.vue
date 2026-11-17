@@ -27,6 +27,7 @@ import BulkBar from './components/BulkBar.vue'
 import ToastBar from './components/ToastBar.vue'
 import MenuButton from './components/MenuButton.vue'
 import QuickAddDialog from './components/QuickAddDialog.vue'
+import InboxDialog from './components/InboxDialog.vue'
 import TodayPanel from './components/TodayPanel.vue'
 import Icon from './components/Icon.vue'
 
@@ -61,6 +62,8 @@ const companies = ref([]) // id and name of every application, for the warning a
 const detailId = ref(null)
 const showSettings = ref(false)
 const showImport = ref(false)
+const inboxFiles = ref(null) // null = closed, otherwise the files that came with the drop or paste
+const fileDrag = ref(false) // files are dragged over the page
 const quickAdd = ref(false) // the small dialog for a new application
 const page = ref('applications') // 'applications' or 'stats'
 const allItems = ref([]) // for the statistics, regardless of the filters
@@ -273,6 +276,54 @@ async function openNew() {
   }
 }
 
+// Files dropped or pasted on the page open the inbox, where they get a company, a kind and a name.
+// While a dialog is open the dialog decides (the detail view attaches them to its own application).
+const overlayOpen = () => !!document.querySelector('.overlay')
+const withFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files')
+let dragDepth = 0
+
+async function openInbox(files = []) {
+  try {
+    companies.value = await api.companies()
+  } catch {
+    companies.value = []
+  }
+  inboxFiles.value = files
+}
+
+function inboxDone({ files, created }) {
+  showToast(created ? t('inbox.doneNew', { n: files, m: created }) : t('inbox.done', { n: files }), { ms: 5000 })
+  load()
+}
+
+function onDragEnter(e) {
+  if (!withFiles(e) || overlayOpen()) return
+  dragDepth++
+  fileDrag.value = true
+}
+function onDragLeave(e) {
+  if (!withFiles(e)) return
+  dragDepth = Math.max(0, dragDepth - 1)
+  if (!dragDepth) fileDrag.value = false
+}
+function onDragOver(e) {
+  if (withFiles(e)) e.preventDefault() // otherwise the browser would open the file instead
+}
+function onDrop(e) {
+  if (!withFiles(e)) return
+  e.preventDefault()
+  dragDepth = 0
+  fileDrag.value = false
+  if (!overlayOpen()) openInbox([...e.dataTransfer.files])
+}
+function onPaste(e) {
+  if (overlayOpen()) return
+  const files = [...(e.clipboardData?.files ?? [])]
+  if (!files.length) return
+  e.preventDefault()
+  openInbox(files)
+}
+
 function expandQuick(data) {
   quickAdd.value = false
   editing.value = data
@@ -296,7 +347,8 @@ function focusMain() {
 
 function onKey(e) {
   if (e.key !== 'Escape' || confirmState.value) return // the confirm dialog handles its own Escape
-  if (showImport.value) showImport.value = false
+  if (inboxFiles.value) inboxFiles.value = null
+  else if (showImport.value) showImport.value = false
   else if (showSettings.value) showSettings.value = false
   else if (quickAdd.value) closeForm()
   else if (editing.value) closeForm()
@@ -315,8 +367,17 @@ watch(groupByCompany, (value) => {
     localStorage.setItem(GROUP_KEY, value ? '1' : '0')
   } catch {}
 })
-onMounted(() => { load(); window.addEventListener('keydown', onKey) })
-onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', onKey) })
+const pageEvents = { dragenter: onDragEnter, dragleave: onDragLeave, dragover: onDragOver, drop: onDrop, paste: onPaste }
+onMounted(() => {
+  load()
+  window.addEventListener('keydown', onKey)
+  for (const [name, handler] of Object.entries(pageEvents)) window.addEventListener(name, handler)
+})
+onUnmounted(() => {
+  clearTimeout(timer)
+  window.removeEventListener('keydown', onKey)
+  for (const [name, handler] of Object.entries(pageEvents)) window.removeEventListener(name, handler)
+})
 </script>
 
 <template>
@@ -330,6 +391,7 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
         <button :class="{ active: page === 'stats' }" :aria-current="page === 'stats' ? 'page' : null" @click="showStats">{{ t('nav.stats') }}</button>
         <MenuButton :label="t('nav.data')" panel-class="data-panel">
           <template #default="{ close }">
+            <button class="menu-item" @click="openInbox(); close()">{{ t('menu.inbox') }}</button>
             <button class="menu-item" @click="showImport = true; close()">{{ t('menu.import') }}</button>
             <button class="menu-item" @click="exportData(); close()">{{ t('menu.exportCsv') }}</button>
             <button class="menu-item" @click="exportCalendar(); close()">{{ t('menu.calendar') }}</button>
@@ -523,6 +585,8 @@ onUnmounted(() => { clearTimeout(timer); window.removeEventListener('keydown', o
     />
     <ApplicationForm v-if="editing" :item="editing" :error="errorText" :companies="companies" :kinds="kindKeys" @save="save" @close="closeForm" />
     <FieldSettings v-if="showSettings" @close="showSettings = false" />
+    <InboxDialog v-if="inboxFiles" :companies="companies" :files="inboxFiles" @close="inboxFiles = null" @done="inboxDone" />
+    <div v-if="fileDrag" class="page-drop" aria-hidden="true"><span>{{ t('inbox.dropOverlay') }}</span></div>
     <ImportDialog v-if="showImport" @close="showImport = false" @done="load" />
     <ConfirmDialog v-if="confirmState" />
     <ToastBar />

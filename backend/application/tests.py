@@ -45,6 +45,25 @@ class AttachmentApiTests(TestCase):
                 cleaned = self.client.patch(url, {"name": "../../evil.pdf"}, format="json")
                 self.assertEqual(cleaned.data["name"], "evil.pdf")
 
+    def test_a_name_sent_with_the_upload_is_kept_and_cleaned(self):
+        with tempfile.TemporaryDirectory() as media_root:
+            with override_settings(MEDIA_ROOT=Path(media_root)):
+                def upload(**extra):
+                    return self.client.post(
+                        reverse("attachment-list"),
+                        {
+                            "application": self.application.id,
+                            "file": SimpleUploadedFile("scan001.pdf", b"PDF-Inhalt", content_type="application/pdf"),
+                            "kind": "cv",
+                            **extra,
+                        },
+                        format="multipart",
+                    )
+
+                self.assertEqual(upload(name="2026-11-17_Beispielfirma_Lebenslauf.pdf").data["name"], "2026-11-17_Beispielfirma_Lebenslauf.pdf")
+                self.assertEqual(upload(name="../../evil.pdf").data["name"], "evil.pdf")
+                self.assertEqual(upload().data["name"], "scan001.pdf")  # without a name the file keeps its own
+
     def test_complete_application_documents_can_be_uploaded(self):
         with tempfile.TemporaryDirectory() as media_root:
             with override_settings(MEDIA_ROOT=Path(media_root)):
