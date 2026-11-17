@@ -1,0 +1,43 @@
+# Features
+
+The complete list of what the tracker can do. The short version is in the [README](../README.md); how to use the features is described in the [usage guide](USAGE.md).
+
+- Track applications with company, position, contact person, dates, status, notes and more
+- Status workflow: planned, unsure, applied, interview, rejected, offer
+- Type per application, chosen from a menu in addition to the status and empty until set: "Stelle" (answer to a job posting, rose), "Initiativ" (unsolicited, teal) or "Vermittler" (through an agency or recruiter such as Ferchau, olive). Together with the status this gives combinations such as Planned - Initiativ or Applied - Stelle; there are filter chips for each type and for applications without one, a column in the table, a badge on the cards and the board, and a bulk change
+- Favorites with a star marker and a favorites filter
+- Compact toolbar: live search (company, position, contact person, email, phone, city, notes; the slash key jumps to it), status segments with counters and a Filter menu for the type, tags, favorites, due follow-ups and grouping; the active filters stay visible as chips that can be removed one by one
+- Status shown by color, icon and text (never by color alone): the same badges in the table, on the cards, on the board and as pins on the map
+- Design based on the colour and typography research: fixed colour and type scales as tokens in `style.css` (neutral scale, one lime accent, four signal colours), text and control contrast checked against WCAG AA (4.5:1 text, 3:1 borders), a type scale of six sizes with 16 px body text, a separate dark palette, a visible focus ring, 44 px touch targets and 16 px inputs on phones, and reduced motion respected
+- Consecutive numbering of the applications in the table and detail view
+- Detail view with the status, type and next date in the header, quick actions (mail, call, open the posting), a bar that shows the way from planned to offer, tabs for the overview, the history and the documents, the fields in sections and arrows to go through the applications; a field is changed by clicking it
+- Follow-up reminders: the Today panel lists the applications whose follow-up date has come (status applied) and narrows the list to them with one click, overdue dates are highlighted in the table
+- Sortable table columns (click a column header; the numbering stays with the application) and an optional grouping by company, a badge shows when a company has several applications
+- Select several applications to change their status or delete them at once
+- Deleting moves an application to a trash for 7 days, a message offers "Undo"; older entries are purged for good together with their files
+- History per application: status changes are logged automatically, notes with a date can be added in the detail view
+- Tags per application (comma separated, shown as chips, filter above the list); a warning appears in the form when the company already exists
+- Configurable fields: choose which columns appear in the table and which fields appear in the form and detail view, and arrange the fields of the detail view in sections (reorder them, move fields between them, add sections of your own). Hidden fields are not deleted, their data stays stored and can be shown again at any time
+- Extra fields: source, application channel, work model, salary, interview date, response date, rejection reason
+- Documents are filed from one place: drop files anywhere on the page, paste them with Ctrl+V or choose Daten, Unterlagen ablegen. The inbox suggests the application from the company name in the file name (also without umlauts or GmbH), the kind (cover letter, CV, certificate, complete application) from words such as Anschreiben or Lebenslauf, and a name like 2026-11-17_Müller_GmbH_Anschreiben.pdf. Everything can be changed before filing, a company that does not exist yet creates a new application with the status planned, and the automatic naming can be switched off.
+- A Today panel above the list shows what needs attention: follow-ups that are due, upcoming interviews and applications that have waited more than 21 days for an answer. "Show all" narrows the list to them, and the panel can be hidden
+- Active filters stay visible as removable chips, and a counter shows how many of all applications match
+- Forms show errors right at the field with an example, links typed without `https://` are completed, entries that were not saved are protected (Cancel, Escape and a click on the backdrop ask first) and the quick dialog keeps a draft in the browser
+- Saving and status changes are confirmed in a short message, a status change can be undone, and a skip link brings keyboard users to the content
+- Document attachments per application (cover letter, CV, certificate, complete application, other); PDFs, images and text files open in a viewer dialog on top of the detail view (arrow keys switch between the documents, Escape closes only the viewer), other file types can be downloaded
+- Documents can be renamed (the file extension stays), files are attached by dragging them onto the detail view or pasting them with Ctrl+V (also screenshots), and a document can be dragged out of the list into an e-mail or onto the desktop (Chrome and Edge); the copy button puts an image on the clipboard as an image and any other file as its address, because browsers cannot copy a PDF or Word file itself
+- List, card, board and map views for applications; the board shows one column per status and moves an application when its card is dragged to another column
+- Statistics page: response rate, average days to an answer, applications per week, a Sankey diagram of the path of the sent applications (answered or not, then the outcome) and the way from application to offer
+- Calendar export (.ics) of follow-up dates and interview dates
+- Dark mode that follows the system setting and can be chosen in the settings menu (System, Light, Dark) or switched with the moon or sun button; responsive layout with a floating add button on small screens
+- Optional home address stored in the browser, with approximate distances to application locations
+- Address lookup through OpenStreetMap Nominatim; coordinates and lookup status are saved with applications
+- Optional company logos in the table, on the cards and in the detail view (off by default, switch on under Fields); the initials in the status color are shown when a company has no icon
+- Company list import from CSV, TSV, TXT, XLSX, XLSM, ODS and JSON, with a dry-run preview and a choice to update existing applications or import only new companies
+- CSV export of all applications with every field (also the hidden ones), in the same format as the import template, so an export can be imported again
+- Backups: a download of the database and the uploaded files from the Data menu, and an automatic backup once a day when the server starts (the last 14 are kept in `backend/backups/`)
+- Light header that stays in view, with the Applications and Statistics pages, a Data menu (import, export, calendar, backup) and a settings menu (fields, theme, language); the table header stays in view while scrolling
+- Table rows are reachable by keyboard (the company name opens the details, the arrow icon the posting, the three-dot menu edits or deletes)
+- Clear states: a placeholder while loading, a first-run page, a "no matches" page with a reset button and a retry page when the server is unreachable
+- The form keeps company, position, status and type on top, the other fields fold away in sections that start open when they already have data
+- German and English interface with a language switch, the choice is remembered in the browser
