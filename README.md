@@ -1,6 +1,5 @@
 # Application Tracker
 
-[![Tests](https://github.com/TranceMeli/ApplicationTracker/actions/workflows/tests.yml/badge.svg?style=for-the-badge)](https://github.com/TranceMeli/ApplicationTracker/actions/workflows/tests.yml)
 ![Status](https://img.shields.io/badge/WORK%20IN%20PROGRESS-F4CE14?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
