@@ -126,6 +126,19 @@ application-tracker/
             └── GeoBar.vue
 ```
 
+## Releasing the Windows package
+
+`packaging/build_windows.py` builds `Bewerbungstracker-Windows.zip`: the embeddable Python of python.org, the packages of `backend/requirements.txt`, the backend, the built frontend, `Tracker starten.bat` and a short guide in German. With `--smoke` it starts the result once and loads the page and the API. Run it locally with `python packaging/build_windows.py --smoke --frontend-dist frontend/dist` after `npm run build`.
+
+On GitHub the workflow `release.yml` does the same on a Windows machine. To publish a version, push a tag:
+
+```bash
+git tag v1.0
+git push origin v1.0
+```
+
+The workflow then creates the release with the ZIP file and the instructions for the download page. "Run workflow" in the Actions tab builds the package without a release, which is the way to try a change to the build. The Python version of the package is the one the runner has, so a new Python minor version needs no change here.
+
 ## Extending the app
 
 To add a new field:

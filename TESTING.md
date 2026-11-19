@@ -111,6 +111,10 @@ Every test starts with an empty database, German, the light theme and the list v
 - `e2e/fixtures/sample.pdf` is a minimal valid PDF. Other files (a PNG, a Word stand-in, CSV text) are created inside the tests, so no further binary files are needed.
 - The texts the tests look for are the German interface texts. When you rename a label in `frontend/src/i18n.js`, the matching test has to be updated.
 
+## The Windows package
+
+The build of the package checks itself: `python packaging/build_windows.py --smoke` unpacks nothing and installs nothing on your computer, it assembles the folder in a temporary directory, starts the program of that folder with its own Python and a temporary data folder, and fails when the page or the API do not answer. The `Release` workflow on GitHub runs it before every release. It does not test the interface of the package, which is the same one the browser tests cover.
+
 ## Writing new tests
 
 - **A new backend rule or endpoint:** add a method to a fitting class in `tests.py` (or a new `TestCase`). Name it after the behaviour, for example `test_bulk_kind_change_sets_and_clears`.

@@ -39,6 +39,17 @@ The screenshots show fictitious demo data; companies, people and addresses are m
 
 The complete list is in [docs/FEATURES.md](docs/FEATURES.md).
 
+## Download for Windows
+
+You do not need to know anything about GitHub or programming:
+
+1. Open the [latest release](https://github.com/TranceMeli/ApplicationTracker/releases/latest) and download **Bewerbungstracker-Windows.zip**.
+2. Extract it (right click, Extract all), for example into your Documents.
+3. Double-click **Tracker starten**. The browser opens by itself.
+4. The first time, Windows may say it protected your PC because the program is not signed. Click **More info** and then **Run anyway**.
+
+Your applications are saved in the folder `Bewerbungstracker` inside your Documents, so a new version never touches them. Close the black window to stop the tracker. Nothing to install, no account, and the data never leaves your computer. For macOS and Linux, or to work on the code, use the installation below.
+
 ## Prerequisites
 
 - Python 3.12 or newer with `pip` and `venv`
@@ -65,6 +76,8 @@ npm install
 ```
 
 `manage.py` uses the Python of `backend/.venv` by itself if it exists, so activating the environment is optional.
+
+To use the tracker without a second terminal, build the frontend once with `npm run build` in `frontend/`. The backend then serves it, and `python backend/start_tracker.py` starts everything, keeps the data in a folder of your own (Documents on Windows, your home folder elsewhere) and opens the browser.
 
 ## Quick start
 
