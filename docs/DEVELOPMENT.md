@@ -69,6 +69,7 @@ application-tracker/
 │       ├── geocoding.py        Address lookup with OpenStreetMap Nominatim
 │       ├── logos.py            Company icons from DuckDuckGo, cached in media/logos/
 │       ├── backup.py           Zip backups of the database and the uploaded files
+│       ├── launcher.py         Start program: data folder, database, free port, browser
 │       ├── urls.py             API routes
 │       ├── admin.py            Admin with attachments as inline
 │       └── tests.py            API, attachment, import and statistics tests
