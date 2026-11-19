@@ -98,6 +98,7 @@ Everything works without configuration. These variables change the defaults:
 |---|---|---|---|
 | `API_URL` | frontend dev server | Address of the Django backend | read from `backend/.port`, otherwise `http://localhost:8000` |
 | `TRACKER_DATA_DIR` | backend | Folder for the database, the uploaded files and the backups | the `backend/` folder |
+| `TRACKER_FRONTEND_DIR` | backend | Folder of the built frontend that the backend serves at `/` | `frontend/dist` |
 | `E2E_BROWSER` | browser tests | `chromium` uses the bundled browser instead of Microsoft Edge | Microsoft Edge |
 | `E2E_WEB_PORT`, `E2E_API_PORT` | browser tests | Ports of the frontend and the backend started for the tests | 5190 and 8021 |
 

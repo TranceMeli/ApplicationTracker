@@ -489,3 +489,43 @@ class UpdatedAtTests(TestCase):
         Application.objects.filter(id=application.id).update(updated_at=None)
         client.post("/api/applications/bulk/", {"ids": [application.id], "action": "kind", "kind": "Stelle"}, format="json")
         self.assertIsNotNone(Application.objects.get(id=application.id).updated_at)
+
+
+class FrontendServingTests(TestCase):
+    """The backend serves the built frontend, so the packaged app needs only one server."""
+
+    def test_the_root_shows_the_built_page_and_its_files(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "assets").mkdir()
+            (root / "index.html").write_text("<title>Tracker</title>", encoding="utf-8")
+            (root / "assets" / "app-1a2b.js").write_text("console.log(1)", encoding="utf-8")
+            (root / "favicon.svg").write_text("<svg/>", encoding="utf-8")
+            with override_settings(FRONTEND_DIR=root):
+                page = self.client.get("/")
+                self.assertEqual(page.status_code, 200)
+                self.assertIn(b"<title>Tracker</title>", b"".join(page.streaming_content))
+                page.close()  # Windows cannot delete the folder while a file is still open
+                self.assertEqual(page["Cache-Control"], "no-cache")  # a new build must not come from the cache
+
+                asset = self.client.get("/assets/app-1a2b.js")
+                self.assertEqual(asset.status_code, 200)
+                self.assertNotIn("no-cache", asset.get("Cache-Control", ""))
+                asset.close()
+                icon = self.client.get("/favicon.svg")
+                self.assertEqual(icon.status_code, 200)
+                icon.close()
+                self.assertEqual(self.client.get("/assets/missing.js").status_code, 404)
+
+    def test_without_a_build_the_root_shows_the_api(self):
+        with tempfile.TemporaryDirectory() as folder:
+            with override_settings(FRONTEND_DIR=Path(folder) / "none"):
+                response = self.client.get("/")
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(response["Location"], "/api/")
+
+    def test_api_routes_are_not_taken_over(self):
+        with tempfile.TemporaryDirectory() as folder:
+            (Path(folder) / "index.html").write_text("page", encoding="utf-8")
+            with override_settings(FRONTEND_DIR=Path(folder)):
+                self.assertEqual(self.client.get("/api/applications/").status_code, 200)

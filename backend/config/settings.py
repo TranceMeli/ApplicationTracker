@@ -19,6 +19,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # folder, so that they never touch the real data.
 DATA_DIR = Path(os.environ.get('TRACKER_DATA_DIR', BASE_DIR))
 
+# The built frontend, which the backend serves when it exists (see config/frontend.py).
+FRONTEND_DIR = Path(os.environ.get('TRACKER_FRONTEND_DIR', BASE_DIR.parent / 'frontend' / 'dist'))
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/

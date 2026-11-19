@@ -4,7 +4,7 @@ The tracker has three layers of automated tests. Each layer catches a different 
 
 | Layer | Tool | Where | Tests | Runs against | Takes |
 |---|---|---|---|---|---|
-| Backend | Django `TestCase` | `backend/application/tests.py` | 39 | the API with a temporary test database | a few seconds |
+| Backend | Django `TestCase` | `backend/application/tests.py` | 42 | the API with a temporary test database | a few seconds |
 | Frontend logic | Vitest + jsdom | `frontend/tests/` | 64 | single functions, no browser | about 5 seconds |
 | Browser (end to end) | Playwright + Microsoft Edge | `frontend/e2e/` | 53 | the real app with its own backend and database | about 1 minute |
 
@@ -65,6 +65,7 @@ The Django tests use Django's own temporary test database and a temporary media 
 | `TagAndDueTests` | Tags are cleaned, filtered and counted, due follow-ups show up in the statistics, the company list. |
 | `BackupTests` | The backup zip contains the database and the uploads. |
 | `KindTests` | The type is empty by default, filters combine with the status, entries without a type can be listed, the built-in names (Stelle, Initiativ, Vermittler and their English or alternative spellings such as Recruiter) become their keys, custom types filter independent of case, a too long type is rejected, the bulk type change, the import reads the type column and the old status word, the statistics count the types. |
+| `FrontendServingTests` | The built frontend is served at the root with its files, the page is not cached while the hashed files are, without a build the root redirects to the API, and the API routes stay untouched. |
 | `UpdatedAtTests` | The change date follows every save and cannot be set by hand, also for bulk changes. |
 
 ## Frontend logic tests

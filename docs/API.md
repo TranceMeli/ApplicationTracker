@@ -1,6 +1,6 @@
 # API
 
-The backend is a Django REST API under `/api/`. The root URL redirects to the browsable overview.
+The backend is a Django REST API under `/api/`. The root URL shows the built frontend when `frontend/dist` exists (`npm run build`), otherwise it redirects to the browsable overview of the API.
 
 | Method | Endpoint | Description |
 |---|---|---|
