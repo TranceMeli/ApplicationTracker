@@ -5,7 +5,7 @@ import { defineConfig } from '@playwright/test'
 
 // The browser tests run against their own backend with a throw-away database and upload folder, so the real data is
 // never touched. Both servers start by themselves (and stop again); ports are chosen to not collide with a running
-// tracker on 8000 / 5173.
+// tracker on 8000 / 5173 (E2E_WEB_PORT and E2E_API_PORT change them when something else uses these ports).
 const API_PORT = Number(process.env.E2E_API_PORT ?? 8021)
 const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 5190)
 const dataDir = process.env.TRACKER_E2E_DATA ?? mkdtempSync(join(tmpdir(), 'tracker-e2e-'))

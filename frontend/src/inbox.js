@@ -1,8 +1,10 @@
 // Logic of the inbox: which company and which kind of document a dropped file belongs to, and the name it gets.
 
+// The same limits as the server enforces on upload; checking here shows the reason before anything is sent.
 export const ALLOWED = ['.pdf', '.doc', '.docx', '.odt', '.txt', '.png', '.jpg', '.jpeg']
 export const MAX_SIZE = 10 * 1024 * 1024
 
+// Words that are part of a company name on paper but not in a file name ("Müller GmbH" is saved as "Mueller").
 const LEGAL_FORMS = new Set(['gmbh', 'ag', 'kg', 'se', 'ug', 'mbh', 'co', 'ohg', 'gbr', 'ltd', 'inc', 'llc', 'bv', 'sa', 'und', 'haftungsbeschraenkt'])
 
 const fold = (text) =>
@@ -32,15 +34,17 @@ export function checkFile(file) {
   return ''
 }
 
-// The kind of document from words in the file name. Longer, more specific words come first.
+// The kind of document from words in the file name. The kinds are tried in this order and the first with a hint wins,
+// so "Arbeitszeugnis Lebenslauf" is a certificate.
 const KIND_WORDS = [
   ['certificate', ['zeugnis', 'zertifikat', 'certificate', 'diplom', 'abschluss', 'urkunde']],
-  ['complete', ['gesamt', 'komplett', 'bewerbungsmappe', 'mappe', 'complete', 'application']],
+  ['complete', ['gesamt', 'komplett', 'bewerbungsmappe', 'mappe', 'complete']],
   ['cover_letter', ['anschreiben', 'motivationsschreiben', 'cover', 'letter', 'motivation']],
   ['cv', ['lebenslauf', 'resume', 'curriculum', 'cv']],
 ]
 
 export function guessKind(filename) {
+  // Short hints such as "cv" must be a word of their own, otherwise they would match inside any name.
   const found = words(baseName(filename))
   const text = fold(baseName(filename))
   for (const [kind, hints] of KIND_WORDS) {
@@ -56,7 +60,7 @@ export function guessCompany(filename, companies) {
   let best = null
   for (const c of companies) {
     const key = companyKey(c.company)
-    if (key.length < 3 || !text.includes(key)) continue
+    if (key.length < 3 || !text.includes(key)) continue // a very short name would match inside nearly every file name
     if (!best || key.length > best.key.length || (key.length === best.key.length && c.id > best.id)) best = { ...c, key }
   }
   return best ? { id: best.id, company: best.company } : null

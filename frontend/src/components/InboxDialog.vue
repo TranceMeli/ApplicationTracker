@@ -68,10 +68,11 @@ const names = computed(() => {
   return Object.fromEntries(active.value.map((r, i) => [r.id, numbered[i]]))
 })
 
-// Only an edited name is stored on the row; it keeps the extension of the file.
+// Only a name typed by hand is stored on the row, the others follow the company and the kind.
 function editName(row, value) {
   row.nameOverride = value
 }
+// The extension is added back when it was deleted while editing, so a document never loses its type.
 function finalName(row) {
   const name = (names.value[row.id] || '').trim() || row.file.name
   const ext = extensionOf(row.file.name)
@@ -150,7 +151,7 @@ onMounted(async () => {
   window.addEventListener('paste', onPaste)
   addFiles(props.files)
   await nextTick()
-  const empty = document.querySelector('.inbox-company-input:not(:disabled)')
+  const empty = document.querySelector('.inbox-company-input')
   ;(empty?.value === '' ? empty : picker.value)?.focus()
 })
 onUnmounted(() => window.removeEventListener('paste', onPaste))

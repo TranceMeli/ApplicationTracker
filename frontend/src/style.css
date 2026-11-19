@@ -284,8 +284,6 @@ select.badge option { background: var(--surface); color: var(--ink); font-weight
 .theme-toggle:hover { background: var(--tint); }
 .fab { display: none; }
 
-/* ---- follow up banner ---- */
-
 /* ---- filters: chip row, tag select ---- */
 
 /* ---- sortable column headers, selection, groups ---- */

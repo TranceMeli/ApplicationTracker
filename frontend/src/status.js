@@ -1,7 +1,7 @@
 export const STATUS_KEYS = ['planned', 'unsure', 'applied', 'interview', 'rejected', 'offer']
 
-// The two built-in values of the free-text type of an application (independent of the status): a job posting
-// ("Stelle"), an unsolicited application ("Initiativ") and an application through an agency or recruiter ("Vermittler").
+// The built-in values of the free-text type of an application (independent of the status): a job posting ("Stelle"),
+// an unsolicited application ("Initiativ") and an application through an agency or recruiter ("Vermittler").
 export const BUILTIN_KINDS = ['posting', 'initiative', 'agency']
 
 // A follow up only makes sense while an answer is still awaited.

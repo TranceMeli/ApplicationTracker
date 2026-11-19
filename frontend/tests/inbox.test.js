@@ -25,6 +25,7 @@ describe('guessKind', () => {
     expect(guessKind('Arbeitszeugnis Alpha.pdf')).toBe('certificate')
     expect(guessKind('Bewerbung komplett.pdf')).toBe('complete')
     expect(guessKind('Bildschirmfoto 2026-11-17.png')).toBe('other')
+    expect(guessKind('Arbeitszeugnis Lebenslauf.pdf')).toBe('certificate') // the first kind with a hint wins
   })
 
   it('does not mistake words that only contain "cv"', () => {
